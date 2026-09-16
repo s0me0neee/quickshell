@@ -121,7 +121,7 @@ Popout {
             IconImage {
                 visible: menuRow.image !== ""
                 source: menuRow.image
-                implicitSize: Appearance.iconSize
+                implicitSize: Appearance.themeIconSizeSmall
             }
 
             StyledText {

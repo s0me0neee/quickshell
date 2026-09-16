@@ -80,7 +80,7 @@ Rectangle {
             IconImage {
                 anchors.centerIn: parent
                 visible: root.entry.image === "" && root.appIconPath !== ""
-                implicitSize: 22
+                implicitSize: Appearance.themeIconSize
                 asynchronous: true
                 source: root.appIconPath
             }

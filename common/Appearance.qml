@@ -33,6 +33,12 @@ Singleton {
     readonly property int fontSize: 14
     readonly property int fontSizeSmall: 12
     readonly property int iconSize: 18
+    // App icons come from the icon theme rather than the font, and a theme only holds
+    // artwork at the sizes it ships. Ask for one it doesn't have and Qt renders the
+    // nearest and rescales it, which is what left the tray looking smeared at 18. These
+    // two are the freedesktop panel and menu sizes, so every theme has a clean entry.
+    readonly property int themeIconSize: 22
+    readonly property int themeIconSizeSmall: 16
 
     // Motion
     readonly property int animFast: 150

@@ -61,7 +61,7 @@ Pill {
 
             IconImage {
                 anchors.centerIn: parent
-                implicitSize: Appearance.iconSize
+                implicitSize: Appearance.themeIconSize
                 asynchronous: true
                 source: {
                     // Some apps send "name?path=/dir"; prefer the theme icon, else the file

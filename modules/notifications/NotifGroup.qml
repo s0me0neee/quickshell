@@ -35,7 +35,7 @@ ColumnLayout {
 
         IconImage {
             visible: root.appIconPath !== ""
-            implicitSize: 16
+            implicitSize: Appearance.themeIconSizeSmall
             asynchronous: true
             source: root.appIconPath
         }
