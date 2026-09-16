@@ -3,10 +3,10 @@ import QtQuick.Layouts
 import qs.common
 import qs.components
 
-// Month grid that drops out of the clock. Today is a filled dot, days from the
-// neighbouring months are dimmed, and the whole grid slides sideways when the month
-// changes. Scroll anywhere on it to page months, middle-click to come back to today.
-Popout {
+// Month grid. Today is a filled dot, days from the neighbouring months are dimmed, and
+// the whole grid slides sideways when the month changes. Scroll anywhere on it to page
+// months, middle-click to come back to today.
+ColumnLayout {
     id: root
 
     // Bound to the shell clock from outside, so "today" survives midnight
@@ -23,7 +23,7 @@ Popout {
     // Blank cells before the 1st, so the 1st lands under its weekday
     readonly property int lead: (new Date(shownYear, shownMonth, 1).getDay() - firstDayOfWeek + 7) % 7
 
-    readonly property int cell: 34
+    readonly property real cell: width / 7
 
     function shift(delta: int): void {
         const d = new Date(shownYear, shownMonth + delta, 1);
@@ -43,19 +43,7 @@ Popout {
         slide.restart();
     }
 
-    contentWidth: cell * 7
-
-    // Closing puts it back on this month, so it never reopens somewhere in 2031.
-    // (Connections is not required for that — signal handlers declared here run in
-    // addition to the one Popout declares, they do not replace it.)
-    Connections {
-        target: root
-
-        function onOpenChanged(): void {
-            if (!root.open)
-                root.toToday();
-        }
-    }
+    spacing: Appearance.spacing
 
     RowLayout {
         Layout.fillWidth: true
@@ -105,7 +93,6 @@ Popout {
     // Weekday initials, in the locale's own week order
     RowLayout {
         Layout.fillWidth: true
-        Layout.topMargin: Appearance.spacingSmall
         spacing: 0
 
         Repeater {
@@ -125,8 +112,6 @@ Popout {
     }
 
     Item {
-        id: gridBox
-
         Layout.fillWidth: true
         implicitHeight: grid.implicitHeight
         clip: true
@@ -157,7 +142,7 @@ Popout {
 
                     Rectangle {
                         anchors.centerIn: parent
-                        width: root.cell - 4
+                        width: root.cell - 6
                         height: width
                         radius: width / 2
                         color: day.isToday ? Theme.primary : day.containsMouse ? Theme.glassHover : "transparent"

@@ -16,7 +16,7 @@ Variants {
         required property ShellScreen modelData
 
         // Entries being drawn: everything popping up, plus the ones still sliding out
-        property list<NotifEntry> shown: []
+        property var shown: []
 
         function sync(): void {
             const live = Notifs.popups;

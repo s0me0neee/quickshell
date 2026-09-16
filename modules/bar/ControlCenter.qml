@@ -73,6 +73,18 @@ Popout {
             on: Notifs.dnd
             onActivated: Notifs.toggleDnd()
         }
+
+        // hypridle locks at 10 minutes and suspends at 30, which is wrong for anything
+        // you are watching rather than doing.
+        // Spans the row: five tiles in two columns leaves one looking stranded
+        Tile {
+            Layout.columnSpan: 2
+            icon: Idle.enabled ? Icons.coffee : Icons.sleep
+            label: "Keep awake"
+            detail: Idle.status
+            on: Idle.enabled
+            onActivated: Idle.toggle()
+        }
     }
 
     SubHeading {

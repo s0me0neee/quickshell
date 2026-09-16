@@ -1,0 +1,17 @@
+[package]
+name = "qs-weather"
+version = "0.1.0"
+edition = "2024"
+description = "Prints one JSON forecast for the Quickshell bar to read"
+
+[dependencies]
+# Blocking, so there is no async runtime in a program that makes three requests
+# and exits. rustls rather than the system OpenSSL, so the binary keeps working
+# across an openssl bump.
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "json", "rustls-tls"] }
+serde_json = "1"
+chrono = "0.4"
+
+[profile.release]
+strip = true
+opt-level = "s"

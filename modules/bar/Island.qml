@@ -3,6 +3,7 @@ import Quickshell
 import qs.common
 import qs.components
 import qs.services
+import qs.modules.dashboard
 
 // Center island, after Clavis's Keystone: a rolling clock that grows sideways to
 // carry the current track, and expands into the full media card on hover. Each
@@ -407,7 +408,7 @@ Rectangle {
         show: clockMouse.containsMouse && !root.showDate && !calendar.open
     }
 
-    Calendar {
+    Dashboard {
         id: calendar
 
         target: clockBox

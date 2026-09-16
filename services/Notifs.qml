@@ -82,14 +82,13 @@ Singleton {
     NotificationServer {
         id: server
 
-        // Editing the config shouldn't throw away what you haven't read yet
-        keepOnReload: true
+        // Clear notifications on reload and restart
+        keepOnReload: false
         actionsSupported: true
         bodySupported: true
         bodyMarkupSupported: true
         bodyImagesSupported: true
         imageSupported: true
-        persistenceSupported: true
 
         onNotification: notification => {
             notification.tracked = true;
@@ -106,18 +105,6 @@ Singleton {
         id: entryComponent
 
         NotifEntry {}
-    }
-
-    // A reload hands the new server the notifications the old one was holding, but
-    // the list itself starts empty: adopt them so nothing disappears mid-session.
-    Component.onCompleted: {
-        const tracked = server.trackedNotifications.values;
-        if (tracked.length === 0)
-            return;
-        root.list = tracked.map(notification => entryComponent.createObject(root, {
-                    notification,
-                    popup: false
-                })).reverse();
     }
 
     IpcHandler {

@@ -62,6 +62,26 @@ Singleton {
     readonly property string wifiOff: "\u{F092E}"
     readonly property string ethernet: "\u{F0200}"
 
+    readonly property string coffee: "\u{F0176}"
+    readonly property string sleep: "\u{F0904}"
+    readonly property string cpu: "\u{F035B}"
+    readonly property string memory: "\u{F061A}"
+
+    readonly property string sunny: "\u{F0599}"
+    readonly property string clearNight: "\u{F0594}"
+    readonly property string partlyCloudy: "\u{F0595}"
+    readonly property string partlyCloudyNight: "\u{F0F31}"
+    readonly property string cloudy: "\u{F0590}"
+    readonly property string rainy: "\u{F0597}"
+    readonly property string pouring: "\u{F0596}"
+    readonly property string snowy: "\u{F0598}"
+    readonly property string sleet: "\u{F067F}"
+    readonly property string thunder: "\u{F067E}"
+    readonly property string fog: "\u{F0591}"
+    readonly property string hazy: "\u{F0F30}"
+    readonly property string windy: "\u{F059D}"
+    readonly property string humidity: "\u{F058E}"
+
     readonly property string bluetoothOn: "\u{F00AF}"
     readonly property string bluetoothOff: "\u{F00B2}"
     readonly property string keyboard: "\u{F030C}"
@@ -94,6 +114,36 @@ Singleton {
     function pick(list: var, fraction: real): string {
         const i = Math.round(Math.max(0, Math.min(1, fraction)) * (list.length - 1));
         return list[i];
+    }
+
+    // NOAA names a sky by the icon it would draw, e.g. "day/sct" or "night/tsra_hi".
+    // Their vocabulary is coarser than the font's, so several map onto one glyph.
+    function weather(condition: string): string {
+        const night = condition.startsWith("night/");
+        const sky = condition.replace(/^(day|night)\//, "");
+        if (/^(skc|few|hot)$/.test(sky))
+            return night ? clearNight : sunny;
+        if (/^(sct|bkn)$/.test(sky))
+            return night ? partlyCloudyNight : partlyCloudy;
+        if (sky === "ovc")
+            return cloudy;
+        if (sky.startsWith("wind") || /tornado|hurricane|tropical/.test(sky))
+            return windy;
+        if (sky.startsWith("tsra"))
+            return thunder;
+        if (/sleet|fzra|rain_snow|snow_sleet/.test(sky))
+            return sleet;
+        if (/snow|blizzard|cold/.test(sky))
+            return snowy;
+        if (/rain_showers/.test(sky))
+            return rainy;
+        if (/rain/.test(sky))
+            return pouring;
+        if (sky === "fog")
+            return fog;
+        if (/haze|smoke|dust/.test(sky))
+            return hazy;
+        return cloudy;
     }
 
     // BlueZ names a device by its freedesktop icon; this is the nearest glyph we have
