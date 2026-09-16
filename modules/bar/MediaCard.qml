@@ -22,7 +22,9 @@ Item {
     }
 
     implicitWidth: 520
-    implicitHeight: 150
+    // Grows with its contents: an artist line or a wrapped row of player chips would
+    // otherwise push the transport controls off the bottom edge, which the panel clips
+    implicitHeight: Math.max(150, info.implicitHeight)
 
     // MPRIS doesn't push position updates: refresh once a second, only while shown and playing
     Timer {
@@ -38,8 +40,9 @@ Item {
 
         ClippingRectangle {
             Layout.alignment: Qt.AlignVCenter
-            implicitWidth: 150
-            implicitHeight: 150
+            // Square, and as tall as the card, so the art stays flush with both edges
+            implicitWidth: root.implicitHeight
+            implicitHeight: root.implicitHeight
             radius: 22
             color: Theme.accent
 
@@ -64,6 +67,8 @@ Item {
         }
 
         ColumnLayout {
+            id: info
+
             Layout.fillWidth: true
             Layout.fillHeight: true
             spacing: 2
