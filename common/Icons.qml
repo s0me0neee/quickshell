@@ -3,76 +3,77 @@ pragma Singleton
 import QtQuick
 import Quickshell
 
-// Nerd Font glyphs (Material Design set). Every codepoint here is present in FiraCode Nerd Font v3.
+// Material Symbols Rounded, by codepoint. The font addresses icons by ligature name
+// ("wifi", "volume_up") but this Qt build never applies the ligature, rendering the
+// name as literal text, so every glyph is referenced by its codepoint instead. Each one
+// below was rendered against the installed font to confirm it is the icon it claims.
 Singleton {
-    readonly property string power: "\u{F0425}"
-    readonly property string restart: "\u{F0709}"
-    readonly property string logout: "\u{F0343}"
-    readonly property string suspend: "\u{F04B2}"
-    readonly property string hibernate: "\u{F0717}"
+    readonly property string power: "\uF8C7"
+    readonly property string restart: "\uF053"
+    readonly property string logout: "\uE9BA"
+    readonly property string suspend: "\uF159"
+    readonly property string hibernate: "\uEB3B"
+    readonly property string lock: "\uE899"
 
-    readonly property string workspace: ""
-    readonly property string workspaceActive: "\u{F070B}"
+    readonly property string play: "\uE037"
+    readonly property string pause: "\uE034"
+    readonly property string previous: "\uE045"
+    readonly property string next: "\uE044"
+    readonly property string music: "\uE405"
+    readonly property string bolt: "\uEA0B"
+    readonly property string shuffle: "\uE043"
+    readonly property string repeat: "\uE040"
+    readonly property string repeatOnce: "\uE041"
+    readonly property list<string> brightness: ["\uE1AD", "\uE1AE", "\uE1AC"]
+    readonly property string calendar: "\uEBCC"
 
-    readonly property string play: "\u{F040A}"
-    readonly property string pause: "\u{F03E4}"
-    readonly property string previous: "\u{F04AE}"
-    readonly property string next: "\u{F04AD}"
-    readonly property string music: "\u{F075A}"
-    readonly property string bolt: ""
-    readonly property string shuffle: "\u{F049D}"
-    readonly property string repeat: "\u{F0456}"
-    readonly property string repeatOnce: "\u{F0458}"
-    readonly property list<string> brightness: ["\u{F00DE}", "\u{F00DF}", "\u{F00E0}"]
-    readonly property string calendar: "\u{F00ED}"
+    readonly property list<string> volume: ["\uE04E", "\uE04D", "\uE050"]
+    readonly property string volumeMuted: "\uE04F"
+    readonly property string headphones: "\uF01F"
+    readonly property string speaker: "\uE32D"
+    readonly property string mixer: "\uE429"
+    readonly property string mic: "\uE31D"
+    readonly property string micMuted: "\uE02B"
 
-    readonly property list<string> volume: ["\u{F057F}", "\u{F0580}", "\u{F057E}"]
-    readonly property string volumeMuted: "\u{F075F}"
-    readonly property string headphones: "\u{F02CB}"
-    readonly property string speaker: "\u{F04C3}"
-    readonly property string mixer: "\u{F062E}"
+    readonly property string checkOn: "\uE9DE"
+    readonly property string checkOff: "\uE835"
+    readonly property string radioOn: "\uE837"
+    readonly property string radioOff: "\uE836"
+    readonly property string chevronRight: "\uE5CC"
+    readonly property string chevronDown: "\uE5CF"
+    readonly property string back: "\uE5C4"
+    readonly property string globe: "\uEA07"
+    readonly property string check: "\uE668"
+    readonly property string eye: "\uE8F4"
+    readonly property string eyeOff: "\uE8F5"
+    readonly property string refresh: "\uE5D5"
+    readonly property string settings: "\uE8B8"
+    readonly property string alert: "\uF083"
+    readonly property string close: "\uE5CD"
+    readonly property string clearAll: "\uE0B8"
+    readonly property string openExternal: "\uE89E"
 
-    readonly property string checkOn: "\u{F0132}"
-    readonly property string checkOff: "\u{F0131}"
-    readonly property string radioOn: "\u{F043E}"
-    readonly property string radioOff: "\u{F043D}"
-    readonly property string chevronRight: "\u{F0142}"
-    readonly property string chevronDown: "\u{F0140}"
-    readonly property string back: "\u{F004D}"
-    readonly property string lock: "\u{F033E}"
-    readonly property string globe: "\u{F059F}"
-    readonly property string check: "\u{F012C}"
-    readonly property string close: "\u{F0156}"
-    readonly property string clearAll: "\u{F05E8}"
-    readonly property string eye: "\u{F0208}"
-    readonly property string eyeOff: "\u{F0209}"
-    readonly property string refresh: "\u{F0453}"
-    readonly property string settings: "\u{F0493}"
-    readonly property string alert: "\u{F0026}"
+    readonly property list<string> wifi: ["\uF0B0", "\uEBE4", "\uEBD6", "\uEBE1", "\uF065"]
+    readonly property string wifiOff: "\uE648"
+    readonly property string ethernet: "\uE8BE"
+    readonly property string bluetooth: "\uE1A7"
+    readonly property string bluetoothOff: "\uE1A9"
 
-    readonly property list<string> wifi: ["\u{F092F}", "\u{F091F}", "\u{F0922}", "\u{F0925}", "\u{F0928}"]
-    readonly property string wifiOff: "\u{F092E}"
-    readonly property string ethernet: "\u{F0200}"
+    // 0% through full
+    readonly property list<string> battery: ["\uEBDC", "\uF09C", "\uF09D", "\uF09E", "\uF09F", "\uF0A0", "\uF0A1", "\uE1A5"]
+    readonly property string batteryCharging: "\uE1A3"
+    readonly property string plug: "\uE63C"
 
-    // 0%, 10% ... 90%, then full
-    readonly property list<string> battery: ["\u{F007A}", "\u{F007A}", "\u{F007B}", "\u{F007C}", "\u{F007D}", "\u{F007E}", "\u{F007F}", "\u{F0080}", "\u{F0081}", "\u{F0082}", "\u{F0079}"]
-    readonly property string batteryCharging: "\u{F0084}"
-    readonly property string plug: "\u{F06A5}"
+    readonly property string profilePowerSaver: "\uEC1A"
+    readonly property string profileBalanced: "\uEAF6"
+    readonly property string profilePerformance: "\uE9E4"
 
-    readonly property string profilePowerSaver: "\u{F032A}"
-    readonly property string profileBalanced: "\u{F0F85}"
-    readonly property string profilePerformance: "\u{F04C5}"
-
-    // Keys match swaync-client's "alt" field
+    // Keyed by whether anything is waiting and whether do-not-disturb is on
     readonly property var notifications: ({
-            "notification": "\u{F116B}",
-            "none": "\u{F009C}",
-            "dnd-notification": "\u{F00A0}",
-            "dnd-none": "\u{F0A93}",
-            "inhibited-notification": "\u{F009B}",
-            "inhibited-none": "\u{F0A91}",
-            "dnd-inhibited-notification": "\u{F009B}",
-            "dnd-inhibited-none": "\u{F0A91}"
+            "notification": "\uE7F7",
+            "none": "\uE7F5",
+            "dnd-notification": "\uE7F8",
+            "dnd-none": "\uE7F6"
         })
 
     function pick(list: var, fraction: real): string {
