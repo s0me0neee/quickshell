@@ -29,6 +29,9 @@ CircleButton {
             return Theme.tertiaryContainerText;
         return Theme.secondaryContainerText;
     }
+    // The gauge glyph's ink sits low and left of where it reads as centred
+    iconNudgeX: 1
+    iconNudgeY: -2
     tooltip: {
         if (Power.profile === PowerProfile.Performance)
             return "Performance";

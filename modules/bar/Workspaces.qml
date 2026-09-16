@@ -26,8 +26,8 @@ Pill {
 
     readonly property bool activeUrgent: Hyprland.workspaces.values.find(w => w.id === activeId)?.urgent ?? false
 
-    readonly property int dotSize: 13
-    readonly property int slot: 26
+    readonly property int dotSize: 15
+    readonly property int slot: 29
 
     padding: 13
     spacing: 0

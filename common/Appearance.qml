@@ -6,12 +6,12 @@ import Quickshell
 // Sizes, fonts and motion shared by every part of the shell.
 Singleton {
     // Bar: floating glass groups, no full-width background
-    readonly property int barMarginTop: 5
+    readonly property int barMarginTop: 4
     readonly property int barMarginSide: 6
-    readonly property int groupHeight: 34
+    readonly property int groupHeight: 38
     readonly property int groupPadding: 4
     readonly property int groupGap: 6
-    readonly property int circleSize: 26
+    readonly property int circleSize: 30
     // The centre island is the same height as the side groups
     readonly property int islandHeight: groupHeight
     // Height of the bar strip; popouts hang below it. Sized to the tallest thing in it.
@@ -32,7 +32,7 @@ Singleton {
     readonly property string iconFamily: "FiraCode Nerd Font"
     readonly property int fontSize: 14
     readonly property int fontSizeSmall: 12
-    readonly property int iconSize: 16
+    readonly property int iconSize: 18
 
     // Motion
     readonly property int animFast: 150

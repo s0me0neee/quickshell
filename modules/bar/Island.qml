@@ -27,8 +27,8 @@ Rectangle {
 
     readonly property int padding: 14
     readonly property int gap: 12
-    readonly property int digitSize: 20
-    readonly property real digitHeight: 24
+    readonly property int digitSize: 22
+    readonly property real digitHeight: 27
     // Hours carry the text color, minutes the wallpaper accent
     readonly property color hourColor: Theme.surfaceText
     readonly property color minuteColor: Theme.primary

@@ -7,9 +7,13 @@ MouseArea {
     id: root
 
     property string icon
-    property real iconSize: 16
+    property real iconSize: 18
     property color fill: Theme.tonal
     property color iconColor: Theme.secondaryContainerText
+    // Hand alignment for a glyph whose ink box doesn't sit where the eye wants it.
+    // Positive x moves right, positive y moves down.
+    property real iconNudgeX: 0
+    property real iconNudgeY: 0
     property bool active: false
     property string tooltip
     default property alias extra: overlay.data
@@ -60,6 +64,8 @@ MouseArea {
             text: root.icon
             size: root.iconSize
             color: root.iconColor
+            nudgeX: root.iconNudgeX
+            nudgeY: root.iconNudgeY
         }
 
         Item {

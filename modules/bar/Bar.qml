@@ -23,6 +23,9 @@ Variants {
         margins.left: Appearance.barMarginSide
         margins.right: Appearance.barMarginSide
         implicitHeight: Appearance.barHeight
+        // A pixel less than it occupies, so the gap under the bar is as tight as the
+        // one above it
+        exclusiveZone: Appearance.barMarginTop + Appearance.barHeight - 1
         color: "transparent"
 
         WlrLayershell.namespace: "qs-bar"
