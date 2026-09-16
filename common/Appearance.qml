@@ -32,7 +32,7 @@ Singleton {
     readonly property string iconFamily: "FiraCode Nerd Font"
     readonly property int fontSize: 14
     readonly property int fontSizeSmall: 12
-    readonly property int iconSize: 20
+    readonly property int iconSize: 18
 
     // Motion
     readonly property int animFast: 150

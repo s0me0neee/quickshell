@@ -5,7 +5,7 @@ import qs.services
 
 CircleButton {
     icon: Icons.power
-    iconSize: 20
+    iconSize: 18
     fill: Theme.tonal
     iconColor: Theme.secondaryContainerText
     tooltip: "Power menu"
