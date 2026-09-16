@@ -104,7 +104,7 @@ Rectangle {
                 Icon {
                     anchors.verticalCenter: parent.verticalCenter
                     text: Media.playing ? Icons.pause : Icons.play
-                    size: 12
+                    size: 15
                     color: Theme.primary
                 }
 
