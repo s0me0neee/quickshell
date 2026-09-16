@@ -5,9 +5,12 @@ import qs.common
 import qs.components
 import qs.services
 
-// The settings half of the bar, in one panel: how bright the screen is and how hard
-// the machine is allowed to work. Both used to be a button of their own; neither is
-// something you watch, so neither earns a permanent seat.
+// The switches, and the two settings with no button of their own.
+//
+// The split with the rest of the bar: a tile here is a switch, and the button next to
+// it holds the detail — Wi-Fi's networks live under the network icon, the microphone's
+// level under the volume one. Brightness, the power profile and Bluetooth's devices
+// have nowhere else to be, so they are here in full.
 Popout {
     id: root
 
@@ -28,6 +31,82 @@ Popout {
             Brightness.refresh();
     }
 
+    GridLayout {
+        Layout.fillWidth: true
+        columns: 2
+        rowSpacing: Appearance.spacingSmall
+        columnSpacing: Appearance.spacingSmall
+
+        Tile {
+            icon: Network.wifiEnabled ? Icons.pick(Icons.wifi, Network.strength) : Icons.wifiOff
+            label: "Wi-Fi"
+            detail: Network.wifiEnabled ? (Network.wifiNetwork?.name ?? "Not connected") : "Off"
+            on: Network.wifiEnabled
+            enabled: !Network.wifiHardwareBlocked
+            onActivated: Network.setWifiEnabled(!Network.wifiEnabled)
+        }
+
+        Tile {
+            visible: Bluetooth.available
+            icon: Bluetooth.enabled ? Icons.bluetoothOn : Icons.bluetoothOff
+            label: "Bluetooth"
+            detail: Bluetooth.status
+            on: Bluetooth.enabled
+            onActivated: Bluetooth.setEnabled(!Bluetooth.enabled)
+        }
+
+        // Muted is the state worth shouting about, so that is the one that lights up
+        Tile {
+            visible: Audio.hasMic
+            icon: Audio.micMuted ? Icons.micMuted : Icons.mic
+            label: "Microphone"
+            detail: Audio.micMuted ? "Muted" : `${Math.round(Audio.micVolume * 100)}%`
+            alert: Audio.micMuted
+            onActivated: Audio.toggleMicMute()
+        }
+
+        // The bell does this on a right click, which nobody discovers
+        Tile {
+            icon: Notifs.dnd ? Icons.notifications["dnd-none"] : Icons.notifications["none"]
+            label: "Do not disturb"
+            detail: Notifs.dnd ? "On" : Notifs.count > 0 ? `${Notifs.count} waiting` : "Off"
+            on: Notifs.dnd
+            onActivated: Notifs.toggleDnd()
+        }
+    }
+
+    SubHeading {
+        visible: btList.visible
+        text: "Devices"
+    }
+
+    ListView {
+        id: btList
+
+        Layout.fillWidth: true
+        // Grows with the list, then scrolls, so a well-paired machine can't push the
+        // brightness slider off the bottom of the screen
+        Layout.preferredHeight: Math.min(contentHeight, 180)
+        visible: Bluetooth.enabled && Bluetooth.devices.length > 0
+        clip: true
+        model: Bluetooth.devices
+
+        delegate: ListItem {
+            required property var modelData
+
+            width: ListView.view.width
+            icon: Icons.bluetoothDevice(modelData.icon ?? "")
+            label: Bluetooth.nameOf(modelData)
+            subtitle: Bluetooth.stateOf(modelData)
+            highlighted: modelData.connected
+            onActivated: Bluetooth.toggle(modelData)
+        }
+    }
+
+    Divider {
+        visible: Brightness.available
+    }
+
     Heading {
         visible: Brightness.available
         text: "Display"
@@ -42,6 +121,11 @@ Popout {
     }
 
     // Only worth a list when there is more than one panel to dim
+    SubHeading {
+        visible: Brightness.devices.length > 1
+        text: "Backlight"
+    }
+
     Repeater {
         model: Brightness.devices.length > 1 ? Brightness.devices : []
 
@@ -55,9 +139,7 @@ Popout {
         }
     }
 
-    Divider {
-        visible: Brightness.available
-    }
+    Divider {}
 
     Heading {
         text: "Power"
@@ -88,6 +170,92 @@ Popout {
     component Heading: StyledText {
         font.pixelSize: Appearance.fontSize + 2
         font.weight: Font.DemiBold
+    }
+
+    component SubHeading: StyledText {
+        Layout.topMargin: Appearance.spacingSmall
+        color: Theme.surfaceVariantText
+        font.pixelSize: Appearance.fontSizeSmall
+    }
+
+    // A switch: the name, what it is doing right now, and a fill that says on or off
+    component Tile: Rectangle {
+        id: tile
+
+        property string icon
+        property string label
+        property string detail
+        property bool on: false
+        // For a state that is worth a flag rather than a highlight, like a muted mic
+        property bool alert: false
+        readonly property color front: tile.alert ? Theme.errorContainerText : tile.on ? Theme.primaryContainerText : Theme.surfaceVariantText
+
+        signal activated
+
+        Layout.fillWidth: true
+        implicitHeight: 58
+        radius: Appearance.radiusItem + 2
+        opacity: tile.enabled ? 1 : 0.5
+        color: {
+            if (tile.alert)
+                return Theme.danger;
+            if (tile.on)
+                return Theme.accent;
+            return hover.hovered ? Qt.alpha(Theme.surfaceText, 0.1) : Qt.alpha(Theme.secondaryContainer, 0.3);
+        }
+
+        Behavior on color {
+            CAnim {
+                duration: Appearance.animFast
+            }
+        }
+
+        HoverHandler {
+            id: hover
+
+            enabled: tile.enabled
+            cursorShape: Qt.PointingHandCursor
+        }
+
+        TapHandler {
+            enabled: tile.enabled
+            onTapped: tile.activated()
+        }
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: Appearance.spacingLarge - 2
+            anchors.rightMargin: Appearance.spacing
+            spacing: Appearance.spacing + 2
+
+            Icon {
+                text: tile.icon
+                size: 20
+                color: tile.front
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 0
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: tile.label
+                    color: tile.front
+                    elide: Text.ElideRight
+                    font.pixelSize: Appearance.fontSizeSmall
+                    font.weight: Font.DemiBold
+                }
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: tile.detail
+                    color: Qt.alpha(tile.front, 0.7)
+                    elide: Text.ElideRight
+                    font.pixelSize: Appearance.fontSizeSmall - 1
+                }
+            }
+        }
     }
 
     component ProfileChip: Rectangle {

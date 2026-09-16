@@ -29,6 +29,8 @@ Singleton {
     readonly property list<string> volume: ["\u{F057F}", "\u{F0580}", "\u{F057E}"]
     readonly property string volumeMuted: "\u{F075F}"
     readonly property string headphones: "\u{F02CB}"
+    // The one with the sound waves, for a speaker the audio is going out of over the air.
+    // Plain bluetooth, for the radio itself, is the one below
     readonly property string bluetooth: "\u{F00B0}"
     readonly property string speaker: "\u{F04C3}"
     readonly property string mixer: "\u{F062E}"
@@ -60,6 +62,14 @@ Singleton {
     readonly property string wifiOff: "\u{F092E}"
     readonly property string ethernet: "\u{F0200}"
 
+    readonly property string bluetoothOn: "\u{F00AF}"
+    readonly property string bluetoothOff: "\u{F00B2}"
+    readonly property string keyboard: "\u{F030C}"
+    readonly property string mouse: "\u{F037D}"
+    readonly property string phone: "\u{F011C}"
+    readonly property string laptop: "\u{F0322}"
+    readonly property string gamepad: "\u{F02B4}"
+
     // 0%, 10% ... 90%, then full
     readonly property list<string> battery: ["\u{F007A}", "\u{F007A}", "\u{F007B}", "\u{F007C}", "\u{F007D}", "\u{F007E}", "\u{F007F}", "\u{F0080}", "\u{F0081}", "\u{F0082}", "\u{F0079}"]
     readonly property string batteryCharging: "\u{F0084}"
@@ -84,5 +94,24 @@ Singleton {
     function pick(list: var, fraction: real): string {
         const i = Math.round(Math.max(0, Math.min(1, fraction)) * (list.length - 1));
         return list[i];
+    }
+
+    // BlueZ names a device by its freedesktop icon; this is the nearest glyph we have
+    function bluetoothDevice(name: string): string {
+        if (/headset|headphone/.test(name))
+            return headphones;
+        if (name.startsWith("audio"))
+            return speaker;
+        if (/keyboard/.test(name))
+            return keyboard;
+        if (/mouse|pointing/.test(name))
+            return mouse;
+        if (/phone/.test(name))
+            return phone;
+        if (/computer/.test(name))
+            return laptop;
+        if (/gaming|joystick/.test(name))
+            return gamepad;
+        return bluetoothOn;
     }
 }

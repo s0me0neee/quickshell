@@ -114,6 +114,7 @@ swaync 134 MB + waybar 92 MB + polkit-gnome 37 MB ≈ **263 MB RSS**, ~0.4% CPU.
 │   ├── Audio.qml          # volume, mute, devices       (Quickshell.Services.Pipewire)
 │   ├── Power.qml          # battery, power profile      (Quickshell.Services.UPower)
 │   ├── Network.qml        # wifi / wired                (Quickshell.Networking)
+│   ├── Bluetooth.qml      # radio + paired devices      (Quickshell.Bluetooth)
 │   ├── Media.qml          # now playing                 (Quickshell.Services.Mpris)
 │   ├── Session.qml        # session menu (wlogout until Phase 3)
 │   ├── Swaync.qml         # temporary bell bridge, deleted in Phase 2
@@ -253,8 +254,13 @@ waypaper `post_command`, the waybar layerrule; add `exec-once = qs -d -n`. Rebin
       things you set rather than watch. The button keeps what they told you at a glance:
       the ring is the backlight, the tint is the profile. Volume keeps its own button, and
       the media card belongs to the island
-- [ ] Quick toggles in the control center: wifi, bluetooth, mic mute
-- [ ] Wifi list with connect (replaces the nmtui click)
+- [x] Quick toggles in the control center: Wi-Fi, Bluetooth, microphone, do not disturb,
+      each a tile saying what it is doing right now. A tile is a switch; the detail stays
+      under the button that owns it (networks under the network icon, the mic level under
+      the volume one). Bluetooth has no such button, so its paired devices are listed here,
+      connecting and disconnecting on a click
+- [x] Wifi list with connect (replaces the nmtui click): saved networks, password entry
+      with the failure reason, forget
 - [x] OSD: the island morphs to show volume or brightness when it moves, then shrinks back
       after 1.6 s. Driven by the values rather than by the keybinds, so it covers the laptop
       keys, the bar's own wheels and anything else running wpctl or brightnessctl
