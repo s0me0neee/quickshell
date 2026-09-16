@@ -71,29 +71,19 @@ Pill {
             }
         }
 
-        Rectangle {
-            id: capsule
-
-            x: track.start
-            width: Math.max(0, track.end - track.start)
-            height: root.dotSize
-            radius: height / 2
-            color: root.activeUrgent ? Theme.critical : Theme.primary
-            visible: root.activeIndex >= 0
-
-            Behavior on color {
-                CAnim {
-                    duration: Appearance.animNormal
-                }
-            }
-        }
-
+        // running: false, or these would run themselves on load — a value source animates
+        // as soon as its component completes, and with no target that means both edges get
+        // dragged to 0 and the capsule sits collapsed at the far left until you switch
         Anim on start {
             id: startAnim
+
+            running: false
         }
 
         Anim on end {
             id: endAnim
+
+            running: false
         }
 
         Repeater {
@@ -105,8 +95,12 @@ Pill {
                 required property int index
                 readonly property int wsId: index + 1
                 readonly property HyprlandWorkspace ws: Hyprland.workspaces.values.find(w => w.id === wsId) ?? null
-                readonly property bool isActive: root.activeIndex === index
                 readonly property bool occupied: (ws?.toplevels.values.length ?? 0) > 0
+                // The capsule paints over the dots, so a dot only has to stop drawing
+                // once the capsule has swallowed it whole. Until then the capsule clips
+                // it, which is what makes the dot look absorbed on arrival instead of
+                // blinking out before the capsule gets there.
+                readonly property bool covered: root.activeIndex >= 0 && track.start <= x + (root.slot - root.dotSize) / 2 && track.end >= x + (root.slot + root.dotSize) / 2
 
                 x: index * root.slot
                 width: root.slot
@@ -120,10 +114,10 @@ Pill {
                     width: root.dotSize
                     height: root.dotSize
                     radius: height / 2
-                    // The capsule stands in for the active dot
-                    opacity: dot.isActive ? 0 : 1
-                    // Hover swells the dot in place, so its neighbours never move
-                    scale: dot.containsMouse ? 1.3 : 1
+                    visible: !dot.covered
+                    // Hover swells the dot in place, so its neighbours never move.
+                    // A dot under the capsule stays put, or it would peek out past it.
+                    scale: dot.containsMouse && !dot.covered ? 1.3 : 1
                     color: {
                         if (dot.ws?.urgent)
                             return Theme.critical;
@@ -138,17 +132,30 @@ Pill {
                         }
                     }
 
-                    Behavior on opacity {
-                        Anim {
-                            duration: Appearance.animFast
-                        }
-                    }
-
                     Behavior on scale {
                         Anim {
                             duration: Appearance.animFast
                         }
                     }
+                }
+            }
+        }
+
+        // Declared last so it paints over the dots: a dot the capsule sweeps past goes
+        // behind it rather than on top of it
+        Rectangle {
+            id: capsule
+
+            x: track.start
+            width: Math.max(0, track.end - track.start)
+            height: root.dotSize
+            radius: height / 2
+            color: root.activeUrgent ? Theme.critical : Theme.primary
+            visible: root.activeIndex >= 0
+
+            Behavior on color {
+                CAnim {
+                    duration: Appearance.animNormal
                 }
             }
         }

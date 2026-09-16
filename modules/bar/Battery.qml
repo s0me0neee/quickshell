@@ -23,6 +23,7 @@ CircleButton {
         return Icons.pick(Icons.battery, Power.percentage);
     }
     iconSize: root.plugged ? 15 : 16
+    iconNudgeX: -1
     // Tinted while it is on mains, so a glance is enough
     fill: {
         if (root.low)
