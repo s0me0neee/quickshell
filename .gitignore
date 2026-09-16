@@ -1,0 +1,4 @@
+# Qt/QML caches
+*.qmlc
+*.jsc
+.qmlls.ini

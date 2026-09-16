@@ -1,0 +1,77 @@
+import QtQuick
+import qs.common
+
+// Round tinted bar button with a centered icon and an optional hover tooltip.
+// Extra children (badges, rings) are drawn over the button.
+MouseArea {
+    id: root
+
+    property string icon
+    property real iconSize: 15
+    property color fill: Theme.tonal
+    property color iconColor: Theme.secondaryContainerText
+    property bool active: false
+    property string tooltip
+    default property alias extra: overlay.data
+
+    implicitWidth: Appearance.circleSize
+    implicitHeight: Appearance.circleSize
+    hoverEnabled: true
+    cursorShape: Qt.PointingHandCursor
+    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+
+    Rectangle {
+        anchors.fill: parent
+        radius: width / 2
+        color: root.fill
+        // Grows under the pointer (Clavis does this by changing the button's size;
+        // scaling instead keeps the neighbours in a packed group still)
+        scale: root.pressed ? 0.86 : root.containsMouse ? 1.12 : 1
+
+        Behavior on color {
+            CAnim {
+                duration: Appearance.animNormal
+            }
+        }
+
+        Behavior on scale {
+            Anim {
+                duration: Appearance.animNormal
+                easing.bezierCurve: Appearance.curveExpressive
+            }
+        }
+
+        // Hover / active state layer
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: root.iconColor
+            opacity: root.active ? 0.18 : root.containsMouse ? 0.1 : 0
+
+            Behavior on opacity {
+                Anim {
+                    duration: Appearance.animFast
+                }
+            }
+        }
+
+        Icon {
+            anchors.centerIn: parent
+            text: root.icon
+            size: root.iconSize
+            color: root.iconColor
+        }
+
+        Item {
+            id: overlay
+
+            anchors.fill: parent
+        }
+    }
+
+    Tooltip {
+        target: root
+        text: root.tooltip
+        show: root.containsMouse && !root.pressed
+    }
+}
