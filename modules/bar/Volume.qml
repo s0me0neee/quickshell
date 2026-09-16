@@ -21,7 +21,7 @@ CircleButton {
     }
 
     icon: glyph
-    iconSize: 12
+    iconSize: 14
     iconColor: Audio.muted ? Theme.critical : Theme.secondaryContainerText
     active: popout.open
     tooltip: popout.open ? "" : `Volume ${Math.round(Audio.volume * 100)}%${Audio.muted ? " · muted" : ""}`

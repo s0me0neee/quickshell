@@ -25,10 +25,10 @@ Rectangle {
     property real mediaProgress: Media.hasMedia ? 1 : 0
     property real dateProgress: showDate ? 1 : 0
 
-    readonly property int padding: 16
+    readonly property int padding: 14
     readonly property int gap: 12
-    readonly property int digitSize: 21
-    readonly property real digitHeight: 25
+    readonly property int digitSize: 20
+    readonly property real digitHeight: 24
     // Hours carry the text color, minutes the wallpaper accent
     readonly property color hourColor: Theme.surfaceText
     readonly property color minuteColor: Theme.primary
@@ -115,7 +115,7 @@ Rectangle {
 
                     anchors.verticalCenter: parent.verticalCenter
                     implicitWidth: titleText.width
-                    implicitHeight: 20
+                    implicitHeight: 19
                     clip: true
 
                     StyledText {

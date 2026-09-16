@@ -12,8 +12,8 @@ Singleton {
     readonly property int groupPadding: 4
     readonly property int groupGap: 6
     readonly property int circleSize: 26
-    // The centre island stands a little taller than the side groups
-    readonly property int islandHeight: 42
+    // The centre island is the same height as the side groups
+    readonly property int islandHeight: groupHeight
     // Height of the bar strip; popouts hang below it. Sized to the tallest thing in it.
     readonly property int barHeight: islandHeight
 

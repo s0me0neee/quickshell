@@ -7,7 +7,7 @@ MouseArea {
     id: root
 
     property string icon
-    property real iconSize: 15
+    property real iconSize: 16
     property color fill: Theme.tonal
     property color iconColor: Theme.secondaryContainerText
     property bool active: false
