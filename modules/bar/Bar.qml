@@ -46,7 +46,9 @@ Variants {
             }
 
             Pill {
-                NotificationBell {}
+                NotificationBell {
+                    bar: bar
+                }
             }
         }
 

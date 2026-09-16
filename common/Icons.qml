@@ -42,6 +42,8 @@ Singleton {
     readonly property string lock: "\u{F033E}"
     readonly property string globe: "\u{F059F}"
     readonly property string check: "\u{F012C}"
+    readonly property string close: "\u{F0156}"
+    readonly property string clearAll: "\u{F05E8}"
     readonly property string eye: "\u{F0208}"
     readonly property string eyeOff: "\u{F0209}"
     readonly property string refresh: "\u{F0453}"

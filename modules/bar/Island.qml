@@ -25,10 +25,10 @@ Rectangle {
     property real mediaProgress: Media.hasMedia ? 1 : 0
     property real dateProgress: showDate ? 1 : 0
 
-    readonly property int padding: 13
-    readonly property int gap: 10
-    readonly property int digitSize: 19
-    readonly property real digitHeight: 22
+    readonly property int padding: 16
+    readonly property int gap: 12
+    readonly property int digitSize: 21
+    readonly property real digitHeight: 25
     // Hours carry the text color, minutes the wallpaper accent
     readonly property color hourColor: Theme.surfaceText
     readonly property color minuteColor: Theme.primary
@@ -39,7 +39,7 @@ Rectangle {
     readonly property int m1: clock.minutes % 10
 
     implicitWidth: content.implicitWidth + padding * 2
-    implicitHeight: Appearance.groupHeight
+    implicitHeight: Appearance.islandHeight
     radius: height / 2
     color: Theme.glass
     border.width: 1
@@ -104,7 +104,7 @@ Rectangle {
                 Icon {
                     anchors.verticalCenter: parent.verticalCenter
                     text: Media.playing ? Icons.pause : Icons.play
-                    size: 11
+                    size: 12
                     color: Theme.primary
                 }
 
@@ -115,7 +115,7 @@ Rectangle {
 
                     anchors.verticalCenter: parent.verticalCenter
                     implicitWidth: titleText.width
-                    implicitHeight: 18
+                    implicitHeight: 20
                     clip: true
 
                     StyledText {
@@ -125,10 +125,10 @@ Rectangle {
                         // screen while it leaves
                         property string pending: Media.title
 
-                        width: Math.min(implicitWidth, 220)
+                        width: Math.min(implicitWidth, 260)
                         height: titleClip.height
                         color: Media.playing ? Theme.surfaceText : Qt.alpha(Theme.surfaceText, 0.55)
-                        font.pixelSize: Appearance.fontSizeSmall + 1
+                        font.pixelSize: Appearance.fontSize
                         font.italic: !Media.playing
                         onPendingChanged: flip.restart()
                         Component.onCompleted: text = pending
@@ -214,7 +214,7 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     text: Qt.formatDate(clock.date, "ddd dd MMM")
                     color: Theme.primary
-                    font.pixelSize: Appearance.fontSizeSmall + 1
+                    font.pixelSize: Appearance.fontSize
                     font.weight: Font.Bold
                 }
 
@@ -312,7 +312,7 @@ Rectangle {
 
         target: mediaChip
         bar: root.bar
-        contentWidth: 446
+        contentWidth: 520
         grabsFocus: false
 
         MediaCard {

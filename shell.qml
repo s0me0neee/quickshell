@@ -5,11 +5,14 @@
 import QtQuick
 import Quickshell
 import qs.modules.bar
+import qs.modules.notifications
 import qs.modules.session
 import qs.services
 
 ShellRoot {
     Bar {}
+
+    Popups {}
 
     // Built on first use, and kept only until it has faded back out
     LazyLoader {

@@ -52,9 +52,20 @@ PanelWindow {
         }
     }
 
+    // Escape as a window shortcut rather than a key handler, so it works even if
+    // nothing inside ever took focus
+    Shortcut {
+        sequences: ["Escape"]
+        context: Qt.WindowShortcut
+        onActivated: Session.close()
+    }
+
     FocusScope {
+        id: keys
+
         anchors.fill: parent
         focus: true
+        Component.onCompleted: forceActiveFocus()
 
         Keys.onPressed: event => {
             if (event.key === Qt.Key_Escape) {

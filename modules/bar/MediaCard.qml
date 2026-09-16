@@ -21,8 +21,8 @@ Item {
         return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
     }
 
-    implicitWidth: 446
-    implicitHeight: 124
+    implicitWidth: 520
+    implicitHeight: 150
 
     // MPRIS doesn't push position updates: refresh once a second, only while shown and playing
     Timer {
@@ -38,16 +38,18 @@ Item {
 
         ClippingRectangle {
             Layout.alignment: Qt.AlignVCenter
-            implicitWidth: 124
-            implicitHeight: 124
-            radius: 18
+            implicitWidth: 150
+            implicitHeight: 150
+            radius: 22
             color: Theme.accent
 
             Image {
                 anchors.fill: parent
                 source: Media.artUrl
-                sourceSize.width: 248
-                sourceSize.height: 248
+                // Decoded well above the drawn size, so high-resolution cover art
+                // stays sharp instead of being downscaled to the old 248px
+                sourceSize.width: 512
+                sourceSize.height: 512
                 fillMode: Image.PreserveAspectCrop
                 asynchronous: true
             }
@@ -110,7 +112,8 @@ Item {
             WavyProgress {
                 Layout.fillWidth: true
                 value: root.length > 0 ? root.position / root.length : 0
-                wavy: Media.playing
+                // A straight line whether playing or paused
+                wavy: false
 
                 MouseArea {
                     anchors.fill: parent

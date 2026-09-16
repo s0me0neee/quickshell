@@ -211,7 +211,8 @@ tool from autostart → commit.** Rolling back means re-enabling one `exec-once`
 - [x] Network: wifi strength icon + name, wired, disconnected in red. Click opens nmtui
 - [x] Battery: a ring dial in the same style as the volume, charge in the ring, icon in the middle; warning/critical colors, charging icon, percentage and status in the tooltip
 - [x] Power profile: icon + color per profile; click cycles
-- [x] Notification bell via `swaync-client -swb` subscription (no polling)
+- [x] Notification bell: count badge, click for the list, right click for do-not-disturb
+      (the `swaync-client -swb` bridge is gone, along with `services/Swaync.qml`)
 - [ ] Use it daily for a few days (tray is the part to watch: two tray hosts can conflict while waybar also runs)
 - [ ] *(later)* tooltips; clock calendar popout
 
@@ -226,13 +227,21 @@ waypaper `post_command`, the waybar layerrule; add `exec-once = qs -d -n`. Rebin
 
 ### Phase 2: Notifications + OSD (replaces swaync)
 > Stop swaync before testing. Only one notification daemon can run at a time.
-- [ ] Notification service: actions, images, app icons, urgency. Same timeouts as now (4 s / 2 s low / 6 s critical)
-- [ ] Popups: stacked top-right under the bar, slide in, click or swipe to dismiss
+- [x] Notification service (`services/Notifs.qml` + `NotifEntry.qml`): actions, images, app
+      icons, urgency, same timeouts as before (4 s / 2 s low / 6 s critical). Entries are
+      copied out of the server object, so an entry outlives the app that sent it, and
+      `keepOnReload` plus adoption of tracked notifications means a config reload doesn't
+      wipe the list. DND survives reloads. Popups are held back while DND is on or while
+      something is fullscreen on the focused monitor; they still land in the list
+- [x] Popups: stacked under the right end of the bar, slide in from the edge and leave the
+      same way, the stack closing up behind them. Click runs the app's default action,
+      right or middle click throws it away. *(no swipe yet)*
+- [x] Notification list under the bell, with do-not-disturb and clear-all
 - [ ] Control center, sliding out under the bell:
-  - quick toggles: wifi, bluetooth, do-not-disturb, mic mute, power profile
+  - quick toggles: wifi, bluetooth, mic mute, power profile
   - volume + brightness sliders
   - media card with album art
-  - notification history grouped by app, clear all
+  - grouping by app in the notification list
 - [ ] Wifi list with connect (replaces the nmtui click)
 - [ ] OSD: the island morphs to show volume/brightness when the keys are pressed, then shrinks back after 1.5 s
 - [ ] Route brightness keys through the shell
@@ -242,11 +251,14 @@ waypaper `post_command`, the waybar layerrule; add `exec-once = qs -d -n`. Rebin
 `layerrule2` swaync lines in `window_rules.conf`.
 
 ### Phase 3: Launcher, session menu, polkit (replaces rofi, wlogout, polkit-gnome)
+> The launcher and clipboard stay on rofi for now — you asked to keep it.
 - [ ] Launcher in the center of the screen: fuzzy search over apps with icons, `Ctrl+j/k` navigation like your rofi
 - [ ] Wallpaper image header, like your rofi theme. It reads the wallpaper path directly, so the `magick` crop step goes away
 - [ ] Clipboard mode: cliphist list → pick → copy + auto-paste (same as `clipboard.sh`)
 - [ ] Calculator mode (qalc)
-- [ ] Session menu: lock, suspend, hibernate, reboot, shutdown, logout (same commands as `wlogout/layout`)
+- [x] Session menu: the same six actions, order, keys (l r s e u h) and commands as
+      `wlogout/layout`, as a full-screen 3x2 grid of glass tiles whose icon swells on
+      hover. Escape or a click outside closes it; arrows and Enter work too
 - [ ] Polkit password dialog in the shell's style
 
 **Cut-over:** remove the polkit-gnome `exec-once` line and the rofi image step in waypaper.
@@ -263,8 +275,8 @@ rofi stays only for `process.sh`.
 - [x] Island expands on hover: media controls + progress bar (done in Phase 1; the card
       takes no focus grab, so a hover panel never swallows a click)
 - [ ] Material Symbols Rounded icons instead of Nerd Font glyphs
-- [ ] Lock screen in Quickshell (`WlSessionLock` + Pam). **Last.** Only after the resume
-      issues are fully solved, because `hypr-unstick.sh` expects hyprlock
+- [ ] ~~Lock screen in Quickshell~~ — **not doing for now.** hyprlock stays; the session
+      menu's Lock goes through `loginctl lock-session`, so hypridle's handling still applies
 
 ---
 
