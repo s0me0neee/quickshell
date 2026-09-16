@@ -104,7 +104,7 @@ Rectangle {
                 Icon {
                     anchors.verticalCenter: parent.verticalCenter
                     text: Media.playing ? Icons.pause : Icons.play
-                    size: 15
+                    size: 18
                     color: Theme.primary
                 }
 
@@ -186,7 +186,9 @@ Rectangle {
                 anchors.fill: mediaRow
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: Media.togglePlaying()
+                acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+                // Middle click steps to the next player, for when several are loaded
+                onClicked: mouse => mouse.button === Qt.MiddleButton ? Media.cyclePlayer() : Media.togglePlaying()
                 onWheel: event => event.angleDelta.y > 0 ? Media.previous() : Media.next()
             }
         }

@@ -68,41 +68,74 @@ Item {
             Layout.fillHeight: true
             spacing: 2
 
-            RowLayout {
+            StyledText {
                 Layout.fillWidth: true
-                spacing: Appearance.spacing
-
-                StyledText {
-                    Layout.fillWidth: true
-                    text: Media.title || "Nothing playing"
-                    font.pixelSize: 17
-                    font.weight: Font.Bold
-                }
-
-                Rectangle {
-                    visible: chip.text !== ""
-                    implicitWidth: chip.implicitWidth + 16
-                    implicitHeight: 22
-                    radius: 11
-                    color: Theme.accent
-
-                    StyledText {
-                        id: chip
-
-                        anchors.centerIn: parent
-                        text: root.player?.identity ?? ""
-                        color: Theme.primaryContainerText
-                        font.pixelSize: 11
-                        font.weight: Font.DemiBold
-                    }
-                }
+                text: Media.title || "Nothing playing"
+                elide: Text.ElideRight
+                font.pixelSize: 17
+                font.weight: Font.Bold
             }
 
             StyledText {
                 Layout.fillWidth: true
                 visible: text !== ""
                 text: Media.artist
+                elide: Text.ElideRight
                 color: Theme.surfaceVariantText
+            }
+
+            // One chip per player, on its own row so a second player can never squeeze
+            // the title out. It is never a guess which app the card is driving; with a
+            // single player this is just the name badge it was.
+            Flow {
+                Layout.fillWidth: true
+                Layout.topMargin: 4
+                spacing: Appearance.spacingSmall
+
+                Repeater {
+                    model: Media.sorted
+
+                    MouseArea {
+                        id: chip
+
+                        required property var modelData
+                        readonly property bool current: modelData === root.player
+
+                        implicitWidth: Math.min(label.implicitWidth + 16, 150)
+                        implicitHeight: 22
+                        hoverEnabled: true
+                        enabled: Media.manyPlayers
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Media.choose(chip.modelData)
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: height / 2
+                            color: chip.current ? Theme.accent : chip.containsMouse ? Theme.glassHover : "transparent"
+                            border.width: chip.current ? 0 : 1
+                            border.color: Qt.alpha(Theme.surfaceText, 0.25)
+
+                            Behavior on color {
+                                CAnim {
+                                    duration: Appearance.animFast
+                                }
+                            }
+                        }
+
+                        StyledText {
+                            id: label
+
+                            anchors.centerIn: parent
+                            width: Math.min(implicitWidth, 134)
+                            horizontalAlignment: Text.AlignHCenter
+                            elide: Text.ElideRight
+                            text: chip.modelData.identity ?? ""
+                            color: chip.current ? Theme.primaryContainerText : Theme.surfaceVariantText
+                            font.pixelSize: 11
+                            font.weight: Font.DemiBold
+                        }
+                    }
+                }
             }
 
             Item {
