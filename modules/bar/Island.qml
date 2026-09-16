@@ -6,12 +6,14 @@ import qs.services
 
 // Center island, after Clavis's Keystone: a rolling clock that grows sideways to
 // carry the current track, and expands into the full media card on hover. Each
-// digit is a 0-9 strip that springs to its place. Click the clock for the calendar,
-// the track to play/pause; scroll the track to change song.
+// digit is a 0-9 strip that springs to its place. Click the clock for the date and
+// right-click it for the calendar; click the track to play/pause, scroll to change song.
 Rectangle {
     id: root
 
     required property QtObject bar
+
+    property bool showDate: false
 
     // The card follows the pointer across both the island and the card itself, so
     // crossing the gap between them doesn't close it
@@ -21,6 +23,7 @@ Rectangle {
     // Reveal amounts, 0..1. Widths are derived from these, so the pill's own width
     // is never a second animation chasing the first one.
     property real mediaProgress: Media.hasMedia ? 1 : 0
+    property real dateProgress: showDate ? 1 : 0
 
     readonly property int padding: 14
     readonly property int gap: 12
@@ -47,6 +50,13 @@ Rectangle {
         Anim {
             duration: Media.hasMedia ? Appearance.expandDuration : Appearance.shrinkDuration
             easing.bezierCurve: Media.hasMedia ? Appearance.curveExpand : Appearance.curveShrink
+        }
+    }
+
+    Behavior on dateProgress {
+        Anim {
+            duration: Appearance.animNormal
+            easing.bezierCurve: Appearance.curveEmphasized
         }
     }
 
@@ -181,6 +191,43 @@ Rectangle {
             }
         }
 
+        // Date, revealed by clicking the clock
+        Item {
+            id: dateChip
+
+            readonly property real fullWidth: dateRow.implicitWidth + root.gap
+
+            anchors.verticalCenter: parent.verticalCenter
+            width: Math.round(fullWidth * root.dateProgress)
+            height: root.digitHeight
+            visible: width > 0
+            opacity: root.dateProgress
+            clip: true
+
+            Row {
+                id: dateRow
+
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: root.gap
+
+                StyledText {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Qt.formatDate(clock.date, "ddd dd MMM")
+                    color: Theme.primary
+                    font.pixelSize: Appearance.fontSize
+                    font.weight: Font.Bold
+                }
+
+                Rectangle {
+                    anchors.verticalCenter: parent.verticalCenter
+                    implicitWidth: 2
+                    implicitHeight: 14
+                    radius: width / 2
+                    color: Qt.alpha(Theme.surfaceText, 0.25)
+                }
+            }
+        }
+
         // The clock and its click target live in a plain Item: a Row lets its
         // children centre vertically, but not fill it
         Item {
@@ -249,7 +296,13 @@ Rectangle {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: calendar.toggle()
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: mouse => {
+                    if (mouse.button === Qt.RightButton)
+                        calendar.toggle();
+                    else
+                        root.showDate = !root.showDate;
+                }
             }
         }
     }
@@ -257,7 +310,7 @@ Rectangle {
     Tooltip {
         target: clockRow
         text: Qt.formatDate(clock.date, "dddd, d MMMM yyyy")
-        show: clockMouse.containsMouse && !calendar.open
+        show: clockMouse.containsMouse && !root.showDate && !calendar.open
     }
 
     Calendar {
