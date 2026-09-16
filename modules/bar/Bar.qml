@@ -75,6 +75,10 @@ Variants {
                     bar: bar
                 }
 
+                Display {
+                    bar: bar
+                }
+
                 Volume {
                     bar: bar
                 }

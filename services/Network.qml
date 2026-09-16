@@ -12,8 +12,10 @@ Singleton {
 
     // --- wifi ---
     readonly property var wifiDevice: devices.find(d => d.type === DeviceType.Wifi) ?? null
-    readonly property var wifiNetwork: wifiDevice?.networks.values.find(n => n.connected) ?? null
     readonly property bool wifiEnabled: Networking.wifiEnabled
+    // A radio that is off means no network, whether or not NetworkManager has finished
+    // tearing the connection down — otherwise the icon lags behind the switch
+    readonly property var wifiNetwork: wifiEnabled ? (wifiDevice?.networks.values.find(n => n.connected) ?? null) : null
     readonly property bool wifiHardwareBlocked: !Networking.wifiHardwareEnabled
     readonly property bool scanning: wifiDevice?.scannerEnabled ?? false
     // Connected first, then saved networks, then strongest signal
@@ -27,7 +29,9 @@ Singleton {
     // --- overall ---
     readonly property bool connected: wired || wifiNetwork !== null
     readonly property string name: wired ? "Ethernet" : (wifiNetwork?.name ?? (wifiEnabled ? "Disconnected" : "Wi-Fi off"))
-    readonly property real strength: wifiNetwork?.signalStrength ?? 0
+    // A fraction, like Audio.volume and Power.percentage: NetworkManager reports 0-100,
+    // and feeding that straight to Icons.pick pinned every network at full bars
+    readonly property real strength: (wifiNetwork?.signalStrength ?? 0) / 100
     readonly property var activeDevice: wired ? wiredDevice : (wifiNetwork ? wifiDevice : null)
     readonly property int connectivity: Networking.connectivity
     readonly property string connectivityText: {

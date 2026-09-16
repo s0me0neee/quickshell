@@ -384,7 +384,7 @@ Popout {
         }
 
         ListItem {
-            icon: Icons.pick(Icons.wifi, row.net?.signalStrength ?? 0)
+            icon: Icons.pick(Icons.wifi, (row.net?.signalStrength ?? 0) / 100)
             label: row.net?.name ?? ""
             subtitle: {
                 if (row.busy)

@@ -29,6 +29,7 @@ Singleton {
     readonly property list<string> volume: ["\u{F057F}", "\u{F0580}", "\u{F057E}"]
     readonly property string volumeMuted: "\u{F075F}"
     readonly property string headphones: "\u{F02CB}"
+    readonly property string bluetooth: "\u{F00B0}"
     readonly property string speaker: "\u{F04C3}"
     readonly property string mixer: "\u{F062E}"
     readonly property string mic: "\u{F036C}"

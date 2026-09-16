@@ -1,0 +1,23 @@
+module Quickshell
+singleton Quickshell 1.0 Quickshell.qml
+ShellRoot 1.0 ShellRoot.qml
+ShellScreen 1.0 ShellScreen.qml
+PanelWindow 1.0 PanelWindow.qml
+PopupWindow 1.0 PopupWindow.qml
+Anchors 1.0 Anchors.qml
+Margins 1.0 Margins.qml
+PopupAnchor 1.0 PopupAnchor.qml
+Variants 1.0 Variants.qml
+LazyLoader 1.0 LazyLoader.qml
+Singleton 1.0 Singleton.qml
+SystemClock 1.0 SystemClock.qml
+ScriptModel 1.0 ScriptModel.qml
+Region 1.0 Region.qml
+PersistentProperties 1.0 PersistentProperties.qml
+Edges 1.0 Edges.qml
+PopupAdjustment 1.0 PopupAdjustment.qml
+ExclusionMode 1.0 ExclusionMode.qml
+QsMenuHandle 1.0 QsMenuHandle.qml
+QsMenuEntry 1.0 QsMenuEntry.qml
+QsMenuOpener 1.0 QsMenuOpener.qml
+QsMenuButtonType 1.0 QsMenuButtonType.qml

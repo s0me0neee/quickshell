@@ -25,10 +25,18 @@ Variants {
                 if (!kept.includes(entry))
                     kept.unshift(entry);
             shown = kept;
+            sweep.restart();
         }
 
-        function drop(entry: NotifEntry): void {
-            shown = shown.filter(n => n !== entry && !n.closed);
+        // Entries that have stopped being popups are still sliding out. Sweeping them on
+        // a timer rather than from the animation keeps the stack honest whatever the
+        // delegates do: Qt never emits finished() for an animation inside a Behavior, and
+        // a leaving card can be rebuilt out from under its own animation.
+        Timer {
+            id: sweep
+
+            interval: Appearance.animNormal + 80
+            onTriggered: win.shown = win.shown.filter(n => Notifs.popups.includes(n))
         }
 
         screen: modelData
@@ -69,30 +77,35 @@ Variants {
             width: parent.width
             spacing: Appearance.spacing
 
+            // ScriptModel, not the array itself: a Repeater on a plain array rebuilds every
+            // delegate whenever the array is reassigned, which restarts each card's
+            // animation every time any other notification arrives or leaves
             Repeater {
-                model: win.shown
+                model: ScriptModel {
+                    values: win.shown
+                }
 
                 Item {
                     id: slot
 
                     required property NotifEntry modelData
 
-                    // 1 while the popup is up, 0 once it has left
-                    property real show: modelData.popup ? 1 : 0
+                    // 1 while the popup is up, 0 once it has left. Starts at 0 and is bound
+                    // once built: an entry is always created while its popup is up, and a
+                    // Behavior never runs on a binding's first evaluation, so binding it
+                    // straight to `popup` made the card appear in place instead of sliding in.
+                    property real show: 0
 
                     width: column.width
                     // Collapses the gap as it leaves, so the stack closes up smoothly
                     height: Math.round(card.implicitHeight * show)
                     clip: true
+                    Component.onCompleted: show = Qt.binding(() => modelData.popup ? 1 : 0)
 
                     Behavior on show {
                         Anim {
                             duration: slot.modelData.popup ? Appearance.animSlow : Appearance.animNormal
                             easing.bezierCurve: slot.modelData.popup ? Appearance.curveEmphasized : Appearance.curveStandard
-                            onFinished: {
-                                if (slot.show === 0)
-                                    win.drop(slot.modelData);
-                            }
                         }
                     }
 

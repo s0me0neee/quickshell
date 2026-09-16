@@ -62,6 +62,10 @@ palette hardcoded in `common/Theme.qml`.
 
 Editing any file reloads the shell immediately — there is no build step.
 
+On a machine without Hyprland — a Mac, or anything not Wayland — `./dev/preview.sh` runs
+the same files under the plain `qml` tool against fake services, in a window or straight to
+a PNG. See [dev/README.md](dev/README.md).
+
 ## Layout
 
 ```
@@ -73,6 +77,7 @@ modules/bar/   the bar and everything in it
 modules/session/  the session menu
 matugen/       the colour template this shell reads
 hypr/          the Hyprland snippet
+dev/           preview harness: runs the shell off-Linux against fake services
 ```
 
 Rules that keep it fast and consistent are in [PLAN.md](PLAN.md): only `services/` start

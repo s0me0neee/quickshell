@@ -12,7 +12,10 @@ Singleton {
     readonly property real percentage: battery?.percentage ?? 0
     readonly property bool charging: battery?.state === UPowerDeviceState.Charging || battery?.state === UPowerDeviceState.PendingCharge
     readonly property bool full: battery?.state === UPowerDeviceState.FullyCharged
-    readonly property bool onBattery: UPower.onBattery
+    // UPower calls this onBattery, but a property named onX is silently swallowed as a
+    // handler for the sibling property x — and `battery` is declared right above, so the
+    // binding never connected and this read false forever.
+    readonly property bool discharging: UPower.onBattery
     // Seconds until empty (discharging) or full (charging); 0 when unknown
     readonly property real timeLeft: charging ? (battery?.timeToFull ?? 0) : (battery?.timeToEmpty ?? 0)
 
@@ -31,7 +34,7 @@ Singleton {
             return "Full";
         if (charging)
             return timeLeft > 0 ? `${formatTime(timeLeft)} to full` : "Charging";
-        if (!onBattery)
+        if (!discharging)
             return "Plugged in";
         // UPower needs a little while on battery before it can estimate
         return timeLeft > 0 ? `${formatTime(timeLeft)} left` : "Estimating…";

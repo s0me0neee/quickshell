@@ -12,9 +12,13 @@ CircleButton {
 
     required property QtObject bar
 
+    // Bluetooth wins over headphones: a wireless headset is both, and which radio the
+    // sound is going out of is the thing worth knowing at a glance
     readonly property string glyph: {
         if (Audio.muted)
             return Icons.volumeMuted;
+        if (Audio.bluetooth)
+            return Icons.bluetooth;
         if (Audio.headphones)
             return Icons.headphones;
         return Icons.pick(Icons.volume, Audio.volume);

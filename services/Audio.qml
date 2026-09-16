@@ -10,7 +10,10 @@ Singleton {
     readonly property PwNode sink: Pipewire.defaultAudioSink
     readonly property real volume: sink?.audio?.volume ?? 0
     readonly property bool muted: sink?.audio?.muted ?? false
-    readonly property bool headphones: /bluez|headphone|headset/i.test(sink?.name ?? "")
+    // PipeWire tags a Bluetooth sink with the bluez5 device API; the node name is the
+    // fallback for one whose device properties haven't been filled in yet
+    readonly property bool bluetooth: (sink?.properties?.["device.api"] ?? "") === "bluez5" || /^bluez/i.test(sink?.name ?? "")
+    readonly property bool headphones: /headphone|headset/i.test(sink?.name ?? "")
     readonly property var sinks: Pipewire.nodes.values.filter(n => n.isSink && !n.isStream && n.audio)
 
     // The microphone, mirrored from the sink side

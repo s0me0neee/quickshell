@@ -10,9 +10,9 @@ CircleButton {
     id: root
 
     readonly property int percent: Math.round(Power.percentage * 100)
-    readonly property bool plugged: !Power.onBattery && !Power.charging
-    readonly property bool low: Power.onBattery && !Power.charging && Power.percentage <= 0.15
-    readonly property bool warn: Power.onBattery && !Power.charging && Power.percentage <= 0.3
+    readonly property bool plugged: !Power.discharging && !Power.charging
+    readonly property bool low: Power.discharging && !Power.charging && Power.percentage <= 0.15
+    readonly property bool warn: Power.discharging && !Power.charging && Power.percentage <= 0.3
 
     visible: Power.hasBattery
     icon: {

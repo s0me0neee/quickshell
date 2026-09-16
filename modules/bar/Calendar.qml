@@ -46,9 +46,8 @@ Popout {
     contentWidth: cell * 7
 
     // Closing puts it back on this month, so it never reopens somewhere in 2031.
-    // Connections rather than an onOpenChanged handler here: a handler on the root
-    // would replace the one Popout itself declares, and with it the bookkeeping that
-    // closes other popouts.
+    // (Connections is not required for that — signal handlers declared here run in
+    // addition to the one Popout declares, they do not replace it.)
     Connections {
         target: root
 

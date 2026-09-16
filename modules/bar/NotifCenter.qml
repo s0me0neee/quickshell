@@ -10,6 +10,16 @@ import qs.services
 Popout {
     id: root
 
+    // Which apps are unfolded, keyed by name so the state survives the groups array
+    // being rebuilt every time a notification arrives or is dismissed
+    property var expandedApps: ({})
+
+    function toggleApp(app: string): void {
+        const next = Object.assign({}, expandedApps);
+        next[app] = !next[app];
+        expandedApps = next;
+    }
+
     contentWidth: 400
 
     RowLayout {
@@ -60,14 +70,17 @@ Popout {
         visible: Notifs.count > 0
         spacing: Appearance.spacing
         clip: true
-        model: Notifs.list
+        model: Notifs.groups
 
-        delegate: NotifCard {
-            required property NotifEntry modelData
+        delegate: NotifGroup {
+            required property var modelData
 
-            entry: modelData
-            inList: true
+            app: modelData.app
+            entries: modelData.entries
+            expanded: root.expandedApps[modelData.app] ?? false
             width: ListView.view.width
+            height: implicitHeight
+            onToggled: root.toggleApp(modelData.app)
         }
     }
 }

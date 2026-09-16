@@ -31,9 +31,12 @@ QtObject {
 
     // Same timings as the swaync setup this replaces
     readonly property int timeout: expireTimeout > 0 ? expireTimeout : critical ? 6000 : urgency === NotificationUrgency.Low ? 2000 : 4000
+    // freedesktop: 0 means the sender wants it to stay until acted on, -1 means "your
+    // default". Treating both as -1 auto-dismissed notifications meant to persist.
+    readonly property bool expires: expireTimeout !== 0
 
     readonly property Timer expiry: Timer {
-        running: root.popup
+        running: root.popup && root.expires
         interval: root.timeout
         onTriggered: root.popup = false
     }

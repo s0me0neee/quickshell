@@ -1,0 +1,4 @@
+module Preview
+singleton Preview 1.0 Preview.qml
+singleton Backlight 1.0 Backlight.qml
+PreviewSurface 1.0 PreviewSurface.qml

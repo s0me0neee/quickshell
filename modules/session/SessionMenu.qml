@@ -13,9 +13,14 @@ import qs.services
 PanelWindow {
     id: root
 
-    property real progress: Session.menuOpen ? 1 : 0
+    // Starts at 0 and is bound once built: the LazyLoader only creates this once the menu
+    // is already open, and a Behavior never runs on a binding's first evaluation — bound
+    // straight to menuOpen, the menu snapped open and only ever animated shut
+    property real progress: 0
     // Keyboard selection; the pointer moves it too, so both stay in sync
     property int selected: 0
+
+    Component.onCompleted: progress = Qt.binding(() => Session.menuOpen ? 1 : 0)
 
     function move(delta: int): void {
         const count = Session.actions.length;

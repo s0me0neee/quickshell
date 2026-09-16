@@ -17,6 +17,30 @@ Singleton {
     readonly property int count: list.length
     property alias dnd: props.dnd
 
+    // The same entries, bucketed by sending app. `list` is newest first, so groups come
+    // out ordered by their most recent notification and stay that way inside each bucket.
+    readonly property list<var> groups: {
+        const order = [];
+        const byApp = {};
+        for (const entry of list) {
+            const app = entry.appName || "Notifications";
+            if (!byApp[app]) {
+                byApp[app] = {
+                    app,
+                    entries: []
+                };
+                order.push(byApp[app]);
+            }
+            byApp[app].entries.push(entry);
+        }
+        return order;
+    }
+
+    function clearApp(app: string): void {
+        for (const entry of list.filter(n => (n.appName || "Notifications") === app))
+            entry.close();
+    }
+
     // Popups are held back while do-not-disturb is on, or while something is
     // fullscreen on the focused monitor — a video or a game shouldn't be covered.
     // They still land in the list, so nothing is lost.
@@ -40,9 +64,10 @@ Singleton {
             entry.close();
     }
 
-    // Stop every popup without clearing the list
+    // Stop every popup without clearing the list. Over a copy, like clearAll: dismissing
+    // rebuilds `popups` underneath the loop, which skipped every other entry.
     function dismissPopups(): void {
-        for (const entry of popups)
+        for (const entry of popups.slice())
             entry.dismiss();
     }
 

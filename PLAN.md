@@ -23,7 +23,7 @@ dashboard. If a feature doesn't earn its space, it doesn't go in.
 ### Caelestia (`caelestia-dots/shell`), built for Hyprland
 
 | Borrow | Skip |
-|---|---|
+| --- | --- |
 | Panels that **grow out of the bar** they belong to, in the same glass color, so a popout looks like part of the bar | The C++ plugin (`Caelestia.*` imports). It needs `quickshell-git` and a CMake build |
 | One motion language: the same curves and durations everywhere | The full-screen "drawers" surface with a border frame around the screen. It blurs a much bigger area and redraws more |
 | Launcher with modes (apps / calculator / clipboard) | Dashboard, performance page, visualizer, the "nexus" settings app |
@@ -35,7 +35,7 @@ dashboard. If a feature doesn't earn its space, it doesn't go in.
 It can't run on Hyprland: it uses niri IPC plus native C++ plugins. Use it for ideas only.
 
 | Borrow | Skip |
-|---|---|
+| --- | --- |
 | The **"Keystone" island**: one center pill that morphs to show media, volume or a new notification, then shrinks back | Weather, lyrics, cava, desktop cards, cloud upload, recording, map |
 | Clean folder split: `common/` (theme), `services/` (system), `modules/` (UI). UI files never run shell commands | `keytop` / `key-cli` helper programs |
 | matugen writes one `colors.json` that the shell watches | Native plugin build system |
@@ -45,7 +45,7 @@ It can't run on Hyprland: it uses niri IPC plus native C++ plugins. Use it for i
 ## What replaces what
 
 | Today | After | Phase |
-|---|---|---|
+| --- | --- | --- |
 | waybar | **Bar** | 1 |
 | swaync popups + control center | **Notifications** + **Control center** | 2 |
 | *(nothing)* | **Volume/brightness OSD** inside the center island | 2 |
@@ -131,6 +131,7 @@ swaync 134 MB + waybar 92 MB + polkit-gnome 37 MB ≈ **263 MB RSS**, ~0.4% CPU.
 ```
 
 Rules:
+
 - Only `services/` start processes. Modules may read Quickshell's built-in singletons
   (e.g. `Hyprland`, `SystemTray`) directly when no extra logic is needed.
 - Imports look like `import qs.common`, with no `qmldir` files needed.
@@ -169,18 +170,22 @@ colors. That means two different palettes, which is part of why things feel glue
 - **Autostart** (at cut-over): `exec-once = qs -d -n`. `-d` detaches from the terminal; `-n` refuses to start a second copy.
 - **Blur** for all shell surfaces (namespaces start with `qs-`), in `hypr/conf/windows/decoration.conf`.
   Layer rules only apply when a surface is created, so restart the shell after changing them.
+
   ```
   layerrule = blur on, match:namespace ^(qs-.*)$
   layerrule = ignore_alpha 0.1, match:namespace ^(qs-.*)$
   ```
+
 - **GPU:** `shell.qml` sets `__EGL_VENDOR_LIBRARY_FILENAMES` to Mesa only, so the shell never
   loads NVIDIA's EGL libraries (saved ~95 MB) and renders on the Intel iGPU.
 - **Keybinds** use Hyprland global shortcuts, which are instant and don't spawn a process:
+
   ```
   bind = CTRL, space, global, qs:launcher
   bind = SUPER, V,     global, qs:clipboard
   bind = SUPER, C,     global, qs:calc
   ```
+
   Scripts can use IPC instead: `qs ipc call <target> <function>` (`qs ipc show` lists them).
 - **Brightness keys go through the shell** (`global, qs:brightnessUp`). The shell runs
   brightnessctl and shows the OSD. The kernel doesn't send file-change events for
@@ -195,6 +200,7 @@ Every phase follows the same loop: **build → use it daily for a few days → r
 tool from autostart → commit.** Rolling back means re-enabling one `exec-once` line.
 
 ### Phase 0: Foundation ✅ (2026-09-15)
+
 - [x] `sudo pacman -S quickshell` (0.3.1)
 - [x] `shell.qml`, `common/` (Theme, Appearance, Icons), `components/` (Pill, StyledText, Icon, Anim, CAnim, Popout, Slider)
 - [x] matugen template + `config.toml` entry; seeded `~/.local/state/quickshell/colors.json` from `hypr/colors.json`
@@ -203,6 +209,7 @@ tool from autostart → commit.** Rolling back means re-enabling one `exec-once`
       `colors.json` recolors the bar live (verified by swapping `primary` and back)
 
 ### Phase 1: Bar (replaces waybar) — built, waiting for daily use + cut-over
+
 - [x] Power button (opens wlogout until Phase 3)
 - [x] Workspaces 1–5, always shown (more appear if they exist). Active grows, highlight slides; empty dimmed, urgent red. Click to switch, scroll to cycle
 - [x] Island: rolling clock (each digit is a 0-9 strip on a spring; hours in text color, minutes in the accent, dot colon), click it for the date. The track title slides in when something is playing and flips over when the track changes (click = play/pause, scroll up = previous, down = next; paused = dim italic). Hovering it expands the island into the media card. The pill morphs springy open, calm closed — the Clavis "Keystone", themed as glass. No album art in the bar itself; it belongs to the card
@@ -226,7 +233,9 @@ waypaper `post_command`, the waybar layerrule; add `exec-once = qs -d -n`. Rebin
 `Super+Shift+B` to `qs kill; qs -d -n`.
 
 ### Phase 2: Notifications + OSD (replaces swaync)
+>
 > Stop swaync before testing. Only one notification daemon can run at a time.
+
 - [x] Notification service (`services/Notifs.qml` + `NotifEntry.qml`): actions, images, app
       icons, urgency, same timeouts as before (4 s / 2 s low / 6 s critical). Entries are
       copied out of the server object, so an entry outlives the app that sent it, and
@@ -251,7 +260,9 @@ waypaper `post_command`, the waybar layerrule; add `exec-once = qs -d -n`. Rebin
 `layerrule2` swaync lines in `window_rules.conf`.
 
 ### Phase 3: Launcher, session menu, polkit (replaces rofi, wlogout, polkit-gnome)
+>
 > The launcher and clipboard stay on rofi for now — you asked to keep it.
+
 - [ ] Launcher in the center of the screen: fuzzy search over apps with icons, `Ctrl+j/k` navigation like your rofi
 - [ ] Wallpaper image header, like your rofi theme. It reads the wallpaper path directly, so the `magick` crop step goes away
 - [ ] Clipboard mode: cliphist list → pick → copy + auto-paste (same as `clipboard.sh`)
@@ -265,6 +276,7 @@ waypaper `post_command`, the waybar layerrule; add `exec-once = qs -d -n`. Rebin
 rofi stays only for `process.sh`.
 
 ### Phase 4: Wallpaper (optional)
+
 - [ ] Picker panel: thumbnail grid of `~/Pictures/wallpaper`, newest first
 - [ ] Picking one runs `scripts/set-wallpaper.sh` (hyprpaper → wal/pywalfox → matugen)
 - [ ] Keep **hyprpaper** as the backend. First make sure scrolloverview's overview still shows the wallpaper if the shell ever draws it instead
@@ -272,6 +284,7 @@ rofi stays only for `process.sh`.
 **Cut-over:** remove `waypaper --restore`; the shell restores the last wallpaper.
 
 ### Phase 5: Polish (only if you want it)
+
 - [x] Island expands on hover: media controls + progress bar (done in Phase 1; the card
       takes no focus grab, so a hover panel never swallows a click)
 - [ ] Material Symbols Rounded icons instead of Nerd Font glyphs
@@ -283,7 +296,7 @@ rofi stays only for `process.sh`.
 ## Everyday workflow
 
 | Task | Command |
-|---|---|
+| --- | --- |
 | Run while developing (live reload, logs in terminal) | `qs -p ~/.config/quickshell` |
 | Logs of the running shell | `qs log -f` |
 | List IPC functions | `qs ipc show` |

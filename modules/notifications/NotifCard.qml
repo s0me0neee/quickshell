@@ -15,6 +15,8 @@ Rectangle {
     required property NotifEntry entry
     // Popups dismiss on click; in the list there is nothing left to dismiss
     property bool inList: false
+    // Off inside a group, where the header above already names the app
+    property bool showAppName: true
 
     readonly property var defaultAction: entry.actions.find(a => a.identifier === "default") ?? null
     readonly property var buttons: entry.actions.filter(a => a.identifier !== "default")
@@ -102,20 +104,32 @@ Rectangle {
 
                 StyledText {
                     Layout.fillWidth: true
+                    visible: root.showAppName
                     text: root.entry.appName
                     color: root.entry.critical ? Theme.critical : Theme.surfaceVariantText
                     font.pixelSize: Appearance.fontSizeSmall
                     font.weight: Font.DemiBold
                 }
 
+                // Keeps the close button hard right once the name above is gone
+                Item {
+                    Layout.fillWidth: true
+                    visible: !root.showAppName
+                }
+
                 CircleButton {
+                    id: closeButton
+
                     implicitWidth: 20
                     implicitHeight: 20
                     icon: Icons.close
                     iconSize: 11
                     fill: "transparent"
                     iconColor: Theme.surfaceVariantText
-                    opacity: mouse.containsMouse ? 1 : 0
+                    // Its own hover counts too: this button sits above the card's MouseArea
+                    // and takes the hover events, so pointing at it cleared containsMouse
+                    // on the card and faded the button out from under the pointer
+                    opacity: mouse.containsMouse || closeButton.containsMouse ? 1 : 0
                     onClicked: root.entry.close()
 
                     Behavior on opacity {
