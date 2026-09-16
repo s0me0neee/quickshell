@@ -24,6 +24,26 @@ Rectangle {
     // is never a second animation chasing the first one.
     property real mediaProgress: Media.hasMedia ? 1 : 0
     property real dateProgress: showDate ? 1 : 0
+    // The OSD takes the track's place rather than sitting beside it. One number drives
+    // both halves of the swap, so the island interpolates straight from one width to
+    // the other instead of bulging while two animations cross.
+    property real osdProgress: Osd.active ? 1 : 0
+
+    readonly property bool osdMuted: (Osd.kind === "volume" && Audio.muted) || (Osd.kind === "mic" && Audio.micMuted)
+    readonly property real osdValue: {
+        if (Osd.kind === "mic")
+            return Audio.micMuted ? 0 : Audio.micVolume;
+        if (Osd.kind === "brightness")
+            return Brightness.brightness;
+        return Audio.muted ? 0 : Audio.volume;
+    }
+    readonly property string osdIcon: {
+        if (Osd.kind === "mic")
+            return Audio.micMuted ? Icons.micMuted : Icons.mic;
+        if (Osd.kind === "brightness")
+            return Icons.pick(Icons.brightness, Brightness.brightness);
+        return Audio.muted ? Icons.volumeMuted : Icons.pick(Icons.volume, Audio.volume);
+    }
 
     readonly property int padding: 14
     readonly property int gap: 12
@@ -60,6 +80,13 @@ Rectangle {
         }
     }
 
+    Behavior on osdProgress {
+        Anim {
+            duration: Osd.active ? Appearance.expandDuration : Appearance.shrinkDuration
+            easing.bezierCurve: Osd.active ? Appearance.curveExpand : Appearance.curveShrink
+        }
+    }
+
     // Ticks once a minute, not once a second
     SystemClock {
         id: clock
@@ -73,6 +100,66 @@ Rectangle {
         anchors.centerIn: parent
         spacing: 0
 
+        // Volume or brightness, for a moment after it moves
+        Item {
+            id: osdChip
+
+            readonly property real fullWidth: osdRow.implicitWidth + root.gap
+
+            anchors.verticalCenter: parent.verticalCenter
+            width: Math.round(fullWidth * root.osdProgress)
+            height: root.digitHeight
+            visible: width > 0
+            opacity: root.osdProgress
+            clip: true
+
+            Row {
+                id: osdRow
+
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Appearance.spacingSmall + 4
+
+                Icon {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: root.osdIcon
+                    size: 18
+                    color: root.osdMuted ? Theme.critical : Theme.primary
+                }
+
+                WavyProgress {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 110
+                    // The same dial as the media card, held straight: a wave here would
+                    // read as sound rather than as a level
+                    wavy: false
+                    lineWidth: 5
+                    value: root.osdValue
+                    color: root.osdMuted ? Theme.critical : Theme.primary
+                }
+
+                StyledText {
+                    id: osdPercent
+
+                    anchors.verticalCenter: parent.verticalCenter
+                    // Right-aligned in a box the width of "100%": the font is monospaced,
+                    // so holding a key no longer shifts the clock as the reading passes
+                    // 10 and 100
+                    width: percentMetrics.width
+                    horizontalAlignment: Text.AlignRight
+                    text: `${Math.round(root.osdValue * 100)}%`
+                    color: root.osdMuted ? Theme.critical : Theme.surfaceText
+                    font.pixelSize: Appearance.fontSize
+
+                    TextMetrics {
+                        id: percentMetrics
+
+                        font: osdPercent.font
+                        text: "100%"
+                    }
+                }
+            }
+        }
+
         // Now playing: art, title, and the gap before the clock
         Item {
             id: mediaChip
@@ -82,10 +169,12 @@ Rectangle {
             property real fullWidth: mediaRow.implicitWidth + root.gap
 
             anchors.verticalCenter: parent.verticalCenter
-            width: Math.round(fullWidth * root.mediaProgress)
+            // Yields the slot to the OSD. Both terms come off the one animated number,
+            // so the island's width slides between the two contents without a bump.
+            width: Math.round(fullWidth * root.mediaProgress * (1 - root.osdProgress))
             height: root.digitHeight
             visible: width > 0
-            opacity: root.mediaProgress
+            opacity: root.mediaProgress * (1 - root.osdProgress)
             clip: true
 
             // Lets the pill glide when a new track has a longer name
@@ -184,6 +273,9 @@ Rectangle {
                 id: mediaMouse
 
                 anchors.fill: mediaRow
+                // Off while the OSD has the slot: the track is still under the pointer,
+                // but it is not what the island is showing
+                enabled: root.osdProgress < 0.5
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 acceptedButtons: Qt.LeftButton | Qt.MiddleButton
