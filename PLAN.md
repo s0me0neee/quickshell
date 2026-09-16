@@ -72,7 +72,7 @@ DesktopEntries, GlobalShortcut, IdleMonitor. **No `quickshell-git` needed.**
 - **Layout stays the same as waybar.** Floating top bar: height 38, gap 3 px top / 5 px sides, radius 16.
   - Left: power button, workspaces 1–5
   - Center: **island** (clock + now playing)
-  - Right: tray, volume, network, battery, power profile, notification bell
+  - Right: tray, network, volume, battery, control center, power
 - **Glass.** Every surface uses the matugen `surface` color at 40% alpha (same as waybar now).
   Hyprland blurs behind it. Text uses `on_surface`. The accent (`primary`) is used only
   for the active workspace, sliders and focus.
@@ -81,7 +81,7 @@ DesktopEntries, GlobalShortcut, IdleMonitor. **No `quickshell-git` needed.**
   - spacing: 4 / 8 / 12
   - fonts: JetBrains Mono for text, FiraCode Nerd Font for icons (both already installed)
 - **One motion set:** 150 ms hover, 250 ms open/close, 400 ms morph, all with the same easing curve.
-- **Popouts attach to the bar** (volume under the volume pill, control center under the bell).
+- **Popouts attach to the bar**, each under the button it belongs to.
   No random floating windows.
 - **Wallpaper change:** colors fade to the new palette over ~400 ms, with no restart.
 
@@ -217,7 +217,7 @@ tool from autostart → commit.** Rolling back means re-enabling one `exec-once`
 - [x] Volume: scroll ±2%, right-click mute, middle-click pavucontrol, left-click popout (slider, output devices, "Open mixer")
 - [x] Network: wifi strength icon + name, wired, disconnected in red. Click opens nmtui
 - [x] Battery: a ring dial in the same style as the volume, charge in the ring, icon in the middle; warning/critical colors, charging icon, percentage and status in the tooltip
-- [x] Power profile: icon + color per profile; click cycles
+- [x] Power profile: icon + color per profile; click cycles *(folded into the control center in Phase 2)*
 - [x] Notification bell: count badge, click for the list, right click for do-not-disturb
       (the `swaync-client -swb` bridge is gone, along with `services/Swaync.qml`)
 - [ ] Use it daily for a few days (tray is the part to watch: two tray hosts can conflict while waybar also runs)
@@ -246,14 +246,21 @@ waypaper `post_command`, the waybar layerrule; add `exec-once = qs -d -n`. Rebin
       same way, the stack closing up behind them. Click runs the app's default action,
       right or middle click throws it away. *(no swipe yet)*
 - [x] Notification list under the bell, with do-not-disturb and clear-all
-- [ ] Control center, sliding out under the bell:
-  - quick toggles: wifi, bluetooth, mic mute, power profile
-  - volume + brightness sliders
-  - media card with album art
-  - grouping by app in the notification list
+- [x] Grouping by app in the notification list
+- [x] Control center, under its own button: the brightness slider (plus a backlight picker
+      when there is more than one panel) and the three power profiles as chips. It takes
+      the place of the brightness and power-profile buttons — two seats on the bar for
+      things you set rather than watch. The button keeps what they told you at a glance:
+      the ring is the backlight, the tint is the profile. Volume keeps its own button, and
+      the media card belongs to the island
+- [ ] Quick toggles in the control center: wifi, bluetooth, mic mute
 - [ ] Wifi list with connect (replaces the nmtui click)
-- [ ] OSD: the island morphs to show volume/brightness when the keys are pressed, then shrinks back after 1.5 s
-- [ ] Route brightness keys through the shell
+- [x] OSD: the island morphs to show volume or brightness when it moves, then shrinks back
+      after 1.6 s. Driven by the values rather than by the keybinds, so it covers the laptop
+      keys, the bar's own wheels and anything else running wpctl or brightnessctl
+- [x] ~~Route brightness keys through the shell~~ — not needed. sysfs *does* raise change
+      events on `actual_brightness`, so the shell watches the file and stays honest however
+      the level moved
 - [ ] *(optional)* island briefly shows a new notification's title
 
 **Cut-over:** remove `exec-once = swaync`, the swaync matugen template, the old

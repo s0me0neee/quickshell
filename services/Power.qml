@@ -20,12 +20,23 @@ Singleton {
     readonly property real timeLeft: charging ? (battery?.timeToFull ?? 0) : (battery?.timeToEmpty ?? 0)
 
     readonly property int profile: PowerProfiles.profile
+    // Slowest to fastest. Not every machine offers the top one
+    readonly property var profiles: PowerProfiles.hasPerformanceProfile ? [PowerProfile.PowerSaver, PowerProfile.Balanced, PowerProfile.Performance] : [PowerProfile.PowerSaver, PowerProfile.Balanced]
+
+    function setProfile(value: int): void {
+        PowerProfiles.profile = value;
+    }
 
     function cycleProfile(): void {
-        const order = [PowerProfile.PowerSaver, PowerProfile.Balanced];
-        if (PowerProfiles.hasPerformanceProfile)
-            order.push(PowerProfile.Performance);
-        PowerProfiles.profile = order[(order.indexOf(PowerProfiles.profile) + 1) % order.length];
+        setProfile(profiles[(profiles.indexOf(PowerProfiles.profile) + 1) % profiles.length]);
+    }
+
+    function profileName(value: int): string {
+        if (value === PowerProfile.Performance)
+            return "Performance";
+        if (value === PowerProfile.PowerSaver)
+            return "Power saver";
+        return "Balanced";
     }
 
     // Human status for the battery pill, e.g. "2h 15m left", "Charging", "Full"

@@ -75,17 +75,15 @@ Variants {
                     bar: bar
                 }
 
-                Display {
-                    bar: bar
-                }
-
                 Volume {
                     bar: bar
                 }
 
                 Battery {}
 
-                PowerProfile {}
+                ControlButton {
+                    bar: bar
+                }
 
                 PowerButton {}
             }
