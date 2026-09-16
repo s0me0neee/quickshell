@@ -31,6 +31,9 @@ Singleton {
     readonly property string headphones: "\u{F02CB}"
     readonly property string speaker: "\u{F04C3}"
     readonly property string mixer: "\u{F062E}"
+    readonly property string mic: "\u{F036C}"
+    readonly property string micMuted: "\u{F036D}"
+    readonly property string apps: "\u{F0570}"
 
     readonly property string checkOn: "\u{F0132}"
     readonly property string checkOff: "\u{F0131}"

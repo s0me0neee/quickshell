@@ -67,6 +67,15 @@ CircleButton {
             }
 
             CircleButton {
+                visible: Audio.hasMic
+                icon: Audio.micMuted ? Icons.micMuted : Icons.mic
+                fill: Audio.micMuted ? Theme.danger : Theme.tonal
+                iconColor: Audio.micMuted ? Theme.errorContainerText : Theme.secondaryContainerText
+                tooltip: Audio.micMuted ? "Unmute microphone" : "Mute microphone"
+                onClicked: Audio.toggleMicMute()
+            }
+
+            CircleButton {
                 icon: root.glyph
                 fill: Audio.muted ? Theme.danger : Theme.tonal
                 iconColor: Audio.muted ? Theme.errorContainerText : Theme.secondaryContainerText
@@ -83,11 +92,8 @@ CircleButton {
             onMoved: value => Audio.setVolume(value)
         }
 
-        StyledText {
-            Layout.topMargin: Appearance.spacingSmall
+        Heading {
             text: "Output"
-            color: Theme.surfaceVariantText
-            font.pixelSize: Appearance.fontSizeSmall
         }
 
         Repeater {
@@ -103,6 +109,54 @@ CircleButton {
             }
         }
 
+        // Microphone: the same controls, only shown when there is one
+        Divider {
+            visible: Audio.hasMic
+        }
+
+        Heading {
+            visible: Audio.hasMic
+            text: "Input"
+        }
+
+        BigSlider {
+            Layout.fillWidth: true
+            visible: Audio.hasMic
+            icon: Audio.micMuted ? Icons.micMuted : Icons.mic
+            muted: Audio.micMuted
+            value: Audio.micVolume
+            onMoved: value => Audio.setMicVolume(value)
+        }
+
+        Repeater {
+            model: Audio.hasMic ? Audio.sources : []
+
+            ListItem {
+                required property var modelData
+
+                icon: modelData === Audio.source ? Icons.radioOn : Icons.radioOff
+                highlighted: modelData === Audio.source
+                label: modelData.description || modelData.nickname || modelData.name
+                onActivated: Audio.setDefaultSource(modelData)
+            }
+        }
+
+        // Whatever is making noise right now, one slider each
+        Divider {
+            visible: Audio.streams.length > 0
+        }
+
+        Heading {
+            visible: Audio.streams.length > 0
+            text: "Apps"
+        }
+
+        Repeater {
+            model: Audio.streams
+
+            StreamRow {}
+        }
+
         Divider {}
 
         ListItem {
@@ -112,6 +166,62 @@ CircleButton {
                 popout.open = false;
                 Audio.openMixer();
             }
+        }
+    }
+
+    component Heading: StyledText {
+        Layout.topMargin: Appearance.spacingSmall
+        color: Theme.surfaceVariantText
+        font.pixelSize: Appearance.fontSizeSmall
+    }
+
+    // One playing app: name and level on top, its own slider under it
+    component StreamRow: ColumnLayout {
+        id: stream
+
+        required property var modelData
+
+        Layout.fillWidth: true
+        spacing: 2
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Appearance.spacingSmall
+
+            Icon {
+                text: stream.modelData.audio?.muted ? Icons.volumeMuted : Icons.speaker
+                size: 14
+                color: stream.modelData.audio?.muted ? Theme.critical : Theme.surfaceVariantText
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Audio.toggleStreamMute(stream.modelData)
+                }
+            }
+
+            StyledText {
+                Layout.fillWidth: true
+                text: Audio.streamName(stream.modelData)
+                elide: Text.ElideRight
+                font.pixelSize: Appearance.fontSizeSmall
+            }
+
+            StyledText {
+                text: `${Math.round((stream.modelData.audio?.volume ?? 0) * 100)}%`
+                color: Theme.surfaceVariantText
+                font.pixelSize: Appearance.fontSizeSmall
+            }
+        }
+
+        BigSlider {
+            Layout.fillWidth: true
+            implicitHeight: 24
+            icon: ""
+            label: ""
+            muted: stream.modelData.audio?.muted ?? false
+            value: stream.modelData.audio?.volume ?? 0
+            onMoved: value => Audio.setStreamVolume(stream.modelData, value)
         }
     }
 }
