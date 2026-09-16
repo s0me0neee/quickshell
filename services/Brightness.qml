@@ -37,8 +37,8 @@ Singleton {
         refresh();
     }
 
-    // Backlight files raise no change events, so the level is re-read on demand rather
-    // than polled — opening a panel is the moment it matters
+    // Re-runs brightnessctl to pick up devices appearing or disappearing. The level
+    // itself is watched, so this is only needed when the device list might have changed
     function refresh(): void {
         if (!writeTimer.running && !setProc.running)
             listProc.running = true;
@@ -60,6 +60,26 @@ Singleton {
     }
 
     Component.onCompleted: refresh()
+
+    // The brightness keys and hypridle run brightnessctl themselves, so the level moves
+    // behind our back most of the time. sysfs does raise inotify events on this file, so
+    // watching it keeps the ring honest without a poll or a second process.
+    FileView {
+        id: level
+
+        path: root.device === "" ? "" : `/sys/class/backlight/${root.device}/actual_brightness`
+        watchChanges: true
+        // A write of our own comes back through here too; the queued value wins until
+        // it has actually been handed to the hardware
+        onFileChanged: reload()
+        onLoaded: {
+            if (writeTimer.running || setProc.running)
+                return;
+            const value = parseInt(text());
+            if (!isNaN(value))
+                root.raw = value;
+        }
+    }
 
     // One write per burst: a drag would otherwise spawn a process per mouse move
     Timer {

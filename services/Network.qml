@@ -29,9 +29,10 @@ Singleton {
     // --- overall ---
     readonly property bool connected: wired || wifiNetwork !== null
     readonly property string name: wired ? "Ethernet" : (wifiNetwork?.name ?? (wifiEnabled ? "Disconnected" : "Wi-Fi off"))
-    // A fraction, like Audio.volume and Power.percentage: NetworkManager reports 0-100,
-    // and feeding that straight to Icons.pick pinned every network at full bars
-    readonly property real strength: (wifiNetwork?.signalStrength ?? 0) / 100
+    // Quickshell already hands this over as a 0-1 fraction, like Audio.volume and
+    // Power.percentage. Dividing NetworkManager's 0-100 out of it left every network
+    // under 1%, so the bar drew the empty-cone glyph on a full-strength link.
+    readonly property real strength: wifiNetwork?.signalStrength ?? 0
     readonly property var activeDevice: wired ? wiredDevice : (wifiNetwork ? wifiDevice : null)
     readonly property int connectivity: Networking.connectivity
     readonly property string connectivityText: {
