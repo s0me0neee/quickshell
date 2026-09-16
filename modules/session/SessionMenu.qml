@@ -139,15 +139,11 @@ PanelWindow {
                             Icon {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 text: tile.modelData.icon
-                                size: Math.round(Math.min(tile.width, tile.height) * 0.2)
+                                // wlogout grew the icon from 20% to 30% on hover
+                                size: Math.round(Math.min(tile.width, tile.height) * (tile.current ? 0.3 : 0.2))
                                 color: tile.current ? Theme.primaryContainerText : Theme.surfaceText
-                                // wlogout grew the icon from 20% to 30% on hover. Scaled
-                                // rather than resized: a variable font builds a new face
-                                // per pixel size, so an animated size is thousands of them
-                                crisp: false
-                                scale: tile.current ? 1.5 : 1
 
-                                Behavior on scale {
+                                Behavior on size {
                                     Anim {
                                         duration: Appearance.animNormal
                                         easing.bezierCurve: Appearance.curveExpressive

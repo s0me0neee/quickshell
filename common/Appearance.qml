@@ -29,7 +29,7 @@ Singleton {
 
     // Fonts
     readonly property string fontFamily: "JetBrains Mono"
-    readonly property string iconFamily: "Material Symbols Rounded"
+    readonly property string iconFamily: "FiraCode Nerd Font"
     readonly property int fontSize: 14
     readonly property int fontSizeSmall: 12
     readonly property int iconSize: 16
