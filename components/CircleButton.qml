@@ -7,7 +7,7 @@ MouseArea {
     id: root
 
     property string icon
-    property real iconSize: 18
+    property real iconSize: 20
     property color fill: Theme.tonal
     property color iconColor: Theme.secondaryContainerText
     // Hand alignment for a glyph whose ink box doesn't sit where the eye wants it.
