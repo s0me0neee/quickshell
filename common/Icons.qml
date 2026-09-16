@@ -57,6 +57,7 @@ Singleton {
     // 0%, 10% ... 90%, then full
     readonly property list<string> battery: ["\u{F007A}", "\u{F007A}", "\u{F007B}", "\u{F007C}", "\u{F007D}", "\u{F007E}", "\u{F007F}", "\u{F0080}", "\u{F0081}", "\u{F0082}", "\u{F0079}"]
     readonly property string batteryCharging: "\u{F0084}"
+    readonly property string plug: "\u{F06A5}"
 
     readonly property string profilePowerSaver: "\u{F032A}"
     readonly property string profileBalanced: "\u{F0F85}"

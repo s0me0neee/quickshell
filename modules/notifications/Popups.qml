@@ -40,10 +40,18 @@ Variants {
         margins.top: Appearance.barMarginTop + Appearance.barHeight + Appearance.popoutGap
         margins.right: Appearance.barMarginSide
         implicitWidth: 400
-        implicitHeight: Math.max(1, column.implicitHeight)
+        // Fixed, deliberately: sizing the window to the stack resized a blurred layer
+        // surface on every animation frame, which is what made the popups stutter and
+        // smear. The stack animates inside a window that never changes size.
+        implicitHeight: (modelData.height ?? 1080) - margins.top - 20
 
         WlrLayershell.namespace: "qs-notifications"
         WlrLayershell.layer: WlrLayer.Top
+
+        // Only the cards take clicks; the empty space below them doesn't
+        mask: Region {
+            item: column
+        }
 
         Connections {
             target: Notifs
@@ -93,9 +101,11 @@ Variants {
 
                         entry: slot.modelData
                         width: parent.width
-                        // Slides in from the right edge it is anchored to
+                        // Slides in from the right edge it is anchored to, and leaves the
+                        // same way. Deliberately no opacity fade: Hyprland's blur rule
+                        // skips anything under 0.1 alpha, so a fading card crosses that
+                        // threshold every frame and the blur region smears behind it.
                         x: Math.round((1 - slot.show) * width)
-                        opacity: slot.show
                     }
                 }
             }
