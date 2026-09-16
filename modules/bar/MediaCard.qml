@@ -192,7 +192,7 @@ Item {
                         Icon {
                             anchors.centerIn: parent
                             text: Media.playing ? Icons.pause : Icons.play
-                            size: 20
+                            size: 24
                             color: Theme.primaryText
                         }
                     }
