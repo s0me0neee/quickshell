@@ -39,6 +39,7 @@ Singleton {
     readonly property string checkOff: "\u{F0131}"
     readonly property string radioOn: "\u{F043E}"
     readonly property string radioOff: "\u{F043D}"
+    readonly property string chevronLeft: "\u{F0141}"
     readonly property string chevronRight: "\u{F0142}"
     readonly property string chevronDown: "\u{F0140}"
     readonly property string back: "\u{F004D}"
