@@ -16,10 +16,9 @@ Popout {
 
     // Bound to the shell clock from outside, so "today" survives midnight
     property date today: new Date()
-    property int page: 2
+    property int page: 0
 
     contentWidth: 320
-    open: true
 
     Connections {
         target: root
