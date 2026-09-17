@@ -67,18 +67,30 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     implicitWidth: panel.width
 
-    // The height is not animated, and that is deliberate — three attempts got here.
+    // The surface only ever grows while the popout is open, and gives the height back
+    // once it is hidden.
     //
-    // A blurred layer surface gives you two ways to fail and no third option. Easing the
-    // surface itself reconfigures it sixty times a second, and the content lags the
-    // geometry: jitter. Holding the surface at the taller end and easing a panel inside
-    // it leaves a band that is inside the surface but transparent for the length of the
-    // animation, which Hyprland does not reliably repaint under blur: the panel smears
-    // behind itself. Both were tried and both were visible.
-    //
-    // So the height snaps, in one commit, and the motion people actually notice — the
-    // content changing — is a cross-fade, which costs no resize at all.
-    implicitHeight: panel.targetHeight + Appearance.popoutGap
+    // This is the whole trick, and it took four goes to find. Hyprland leaves a stale
+    // translucent rectangle over the area a layer surface stops covering when that
+    // surface *shrinks* — growing is fine, and it is not blur, not blur caching and not
+    // any single animation (all measured). Never shrinking a surface anyone can see
+    // sidesteps it: the panel inside is free to be whatever height it likes, and the
+    // surface catches up later, while unmapped.
+    property real windowHeight: panel.targetHeight
+
+    // The reset waits for `visible`, not for `open`: the close is a fade, and the
+    // surface is still on screen for the length of it
+    onVisibleChanged: {
+        if (!visible)
+            windowHeight = panel.targetHeight;
+    }
+
+    implicitHeight: windowHeight + Appearance.popoutGap
+
+    // Clicks below the panel must reach whatever is under them
+    mask: Region {
+        item: panel
+    }
 
     WlrLayershell.namespace: "qs-popout"
     WlrLayershell.layer: WlrLayer.Top
@@ -105,8 +117,16 @@ PanelWindow {
 
         y: Appearance.popoutGap - 10 * (1 - root.progress)
         width: (root.contentWidth > 0 ? root.contentWidth : column.implicitWidth) + Appearance.spacingLarge * 2
-        // Exactly the surface, always: never a transparent band for blur to go stale on
         height: targetHeight
+        // Grow the surface to fit before the panel gets there, never after
+        onTargetHeightChanged: root.windowHeight = Math.max(root.windowHeight, targetHeight)
+
+        // Back now that the surface no longer resizes underneath it
+        Behavior on height {
+            Anim {
+                easing.bezierCurve: Appearance.curveEmphasized
+            }
+        }
         radius: Appearance.radiusPanel
         color: Theme.panel
         border.width: 1

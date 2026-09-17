@@ -104,29 +104,42 @@ not otherwise. No dependency, no daemon.
       plus uptime and load. Reader-counted: the timer only runs while the page is open
 - [x] Ring per figure, in the same dial language as the volume and battery
 
-### 10. Popout height: three attempts, one conclusion
+### 10. Popout height: four attempts, and what it actually was
 
-The clock panel felt like it dragged when switching tabs. It took three tries, and the
-two failures are worth keeping written down, because each looks like the fix for the
-other:
+The clock panel dragged a ghost of itself when a tab made it shorter. Every wrong guess
+is worth keeping, because each one looked like the fix for the last:
 
-| | surface resizes | transparent band inside the surface | verdict |
+| | surface resizes | band inside the surface | result |
 | --- | --- | --- | --- |
 | Original | per frame, on shrink | on grow | "laggy and not smooth" |
-| Ease the panel inside a held window | 2 per animation | for the whole animation | "drag trails" |
+| Ease the panel inside a held window | 2, one of them a shrink | for the animation | "drag trails" |
 | Glue the window to the panel | per frame | never | "still jitters" |
+| Snap the height | 1, a shrink | never | still trails, on decrease only |
 
-- [x] A blurred layer surface gives you those two ways to fail and no third. Easing the
-      surface reconfigures it sixty times a second and the content lags the geometry.
-      Holding it larger leaves a band Hyprland will not repaint under blur
-- [x] So the height snaps: one commit, no band, no reconfiguring. The dashboard's pages
-      swap outright rather than cross-fading, since a page fading out would spend its
-      last frames clipped to the incoming height. The tab underline carries the motion
-- [x] Also removed the dashboard's own height easing, which had been running a second
-      curve in series with Popout's
+**It is the surface shrinking. Nothing else.** Hyprland leaves a stale translucent
+rectangle over the area a layer surface stops covering when that surface gets smaller.
+Growing is fine. Measured and ruled out: blur (`blur off` on the layer — still trails),
+blur caching (`new_optimizations false` — still trails), the layers animation, the fade
+tree, the windows tree. Only `animations:enabled 0` hid it, which is not a fix anyone
+would accept.
 
-Worth remembering: **`grim` cannot see any of this.** It re-composites on capture, so
-damage-tracking smear never appears in a screenshot — it has to be judged on the screen.
+- [x] The surface now only ever *grows* while the popout is open, and gives the height
+      back in `onVisibleChanged`, once it is unmapped and nobody can see it shrink
+- [x] `mask: Region { item: panel }` so the taller-than-it-looks surface doesn't eat
+      clicks meant for whatever is underneath
+- [x] The eased height is back, since the surface no longer resizes during it
+- [x] Verified through the real click path, single clean instance, no ghost band
+
+**How to test this class of bug**, because it cost several rounds to work out:
+
+- `grim` is useless here. It asks the compositor to re-render, which erases the
+  artifact. Screenshots came back clean while the trail was plainly visible
+- `wf-recorder -r 60` *does* capture it, and so does `ffmpeg -f kmsgrab` (the latter
+  needs `hwmap=derive_device=vaapi` on Intel — the framebuffer is tiled and cannot be
+  copied to the CPU)
+- The harness is in the scratchpad: `shrink.sh` records one shrink, `analyse.py` diffs
+  the vacated band against the settled frame and prints how far off each frame is.
+  A three-line `IpcHandler` in Dashboard.qml made runs repeatable; removed again
 
 ## Later
 
