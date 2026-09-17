@@ -110,10 +110,16 @@ The clock panel felt like it dragged when switching tabs. Two causes, both fixed
 
 - [x] The dashboard eased its own height *and* Popout eased the panel's, so two curves
       ran in series. The inner one is gone
-- [x] Popout sized the layer surface from the animating height, so the surface was
-      reconfigured on every frame — about 56 resizes per animation. It now steps to
-      whichever end is taller and drops back when the easing finishes: **2 resizes**.
-      This is shared by every panel in the shell, so they all got it
+- [x] Popout used to size the layer surface from the animating height. Stepping the
+      window to the taller end and easing the panel inside it cut that to two resizes —
+      but it left a band that was *inside the surface and transparent* for the length of
+      the animation, and Hyprland does not reliably repaint that band under blur, which
+      is what the drag trails were. So: window and panel are now glued to the same
+      height, and the easing lives on the window. A reconfigure per frame, which is what
+      a resizing window does anyway, and never a stale band
+- Worth remembering: **`grim` cannot see this class of bug.** It re-composites on
+  capture, so damage-tracking smear never shows up in a screenshot — it has to be
+  looked at on the actual screen
 
 ## Later
 

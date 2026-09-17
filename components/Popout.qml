@@ -66,16 +66,24 @@ PanelWindow {
     }
     exclusionMode: ExclusionMode.Ignore
     implicitWidth: panel.width
-    // The window steps, the panel inside it eases.
+
+    // The window and the panel are always exactly the same height, and the animation
+    // lives here rather than on the panel.
     //
-    // Following `panel.height` here instead resized the layer surface on every frame of
-    // the animation — sixty reconfigures a second, which is what made a tall panel feel
-    // like it was dragging. Now the window jumps straight to whichever is taller, the
-    // height it is leaving or the one it is heading for, and only comes back down once
-    // the panel has finished moving. The surface changes size twice per animation, and
-    // the easing everyone actually sees happens inside it.
-    property real windowHeight: panel.targetHeight
-    implicitHeight: windowHeight + Appearance.popoutGap
+    // The tempting version — hold the window at the taller of the two ends and ease the
+    // panel inside it — leaves a band that is inside the surface but transparent for the
+    // length of the animation. Hyprland blurs these surfaces, and it does not reliably
+    // repaint that band, so the panel smears behind itself. Keeping the surface glued to
+    // the panel means there is never such a band. It costs a reconfigure per frame, which
+    // is what a resizing window does anyway.
+    property real panelHeight: panel.targetHeight
+    implicitHeight: panelHeight + Appearance.popoutGap
+
+    Behavior on panelHeight {
+        Anim {
+            easing.bezierCurve: Appearance.curveEmphasized
+        }
+    }
 
     WlrLayershell.namespace: "qs-popout"
     WlrLayershell.layer: WlrLayer.Top
@@ -102,7 +110,8 @@ PanelWindow {
 
         y: Appearance.popoutGap - 10 * (1 - root.progress)
         width: (root.contentWidth > 0 ? root.contentWidth : column.implicitWidth) + Appearance.spacingLarge * 2
-        height: targetHeight
+        // Follows the window exactly; the easing is on the window's side of this
+        height: root.panelHeight
         radius: Appearance.radiusPanel
         color: Theme.panel
         border.width: 1
@@ -111,21 +120,6 @@ PanelWindow {
         opacity: root.progress
         scale: 0.94 + 0.06 * root.progress
         transformOrigin: Item.Top
-
-        // Room for both ends of the move before it starts, so a growing panel is never
-        // clipped and a shrinking one doesn't drag the surface down with it
-        onTargetHeightChanged: root.windowHeight = Math.max(root.windowHeight, targetHeight)
-
-        Behavior on height {
-            Anim {
-                easing.bezierCurve: Appearance.curveEmphasized
-                // Only now is it safe to give the extra height back
-                onRunningChanged: {
-                    if (!running)
-                        root.windowHeight = panel.targetHeight;
-                }
-            }
-        }
 
         Keys.onEscapePressed: root.open = false
 
