@@ -54,12 +54,12 @@ Popout {
     }
 
     // Every page sits at the top-left of the same box, which is as tall as whichever one
-    // is showing. The panel behind it animates its own height, so switching pages makes
-    // the dashboard grow or shrink rather than jump
-    // No Behavior on implicitHeight here. Popout already eases the panel's height, and
-    // the window's own height follows that — so animating here too ran two curves in
-    // series, which both looked sluggish and resized the layer surface twice a frame.
-    // Jumping to the new page's height lets that one animation do the work.
+    // is showing.
+    //
+    // The pages swap outright rather than cross-fading. The panel's height snaps when
+    // the page changes — see Popout for why it cannot be animated — so a page fading out
+    // would spend its last frames clipped to the incoming page's height, which reads
+    // worse than no transition at all. The tab underline carries the motion instead.
     Item {
         Layout.fillWidth: true
         Layout.topMargin: Appearance.spacingSmall
@@ -71,28 +71,14 @@ Popout {
 
             width: parent.width
             today: root.today
-            visible: opacity > 0
-            opacity: root.page === 0 ? 1 : 0
-
-            Behavior on opacity {
-                Anim {
-                    duration: Appearance.animFast
-                }
-            }
+            visible: root.page === 0
         }
 
         WeatherPage {
             id: weather
 
             width: parent.width
-            visible: opacity > 0
-            opacity: root.page === 1 ? 1 : 0
-
-            Behavior on opacity {
-                Anim {
-                    duration: Appearance.animFast
-                }
-            }
+            visible: root.page === 1
         }
 
         SystemPage {
@@ -102,14 +88,7 @@ Popout {
             // Only while it is both the page on show and on screen at all: a closed
             // dashboard must not leave a timer reading /proc every two seconds
             active: root.page === 2 && root.visible
-            visible: opacity > 0
-            opacity: root.page === 2 ? 1 : 0
-
-            Behavior on opacity {
-                Anim {
-                    duration: Appearance.animFast
-                }
-            }
+            visible: root.page === 2
         }
     }
 }

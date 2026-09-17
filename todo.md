@@ -104,22 +104,29 @@ not otherwise. No dependency, no daemon.
       plus uptime and load. Reader-counted: the timer only runs while the page is open
 - [x] Ring per figure, in the same dial language as the volume and battery
 
-### 10. Popout resize, fixed along the way
+### 10. Popout height: three attempts, one conclusion
 
-The clock panel felt like it dragged when switching tabs. Two causes, both fixed:
+The clock panel felt like it dragged when switching tabs. It took three tries, and the
+two failures are worth keeping written down, because each looks like the fix for the
+other:
 
-- [x] The dashboard eased its own height *and* Popout eased the panel's, so two curves
-      ran in series. The inner one is gone
-- [x] Popout used to size the layer surface from the animating height. Stepping the
-      window to the taller end and easing the panel inside it cut that to two resizes —
-      but it left a band that was *inside the surface and transparent* for the length of
-      the animation, and Hyprland does not reliably repaint that band under blur, which
-      is what the drag trails were. So: window and panel are now glued to the same
-      height, and the easing lives on the window. A reconfigure per frame, which is what
-      a resizing window does anyway, and never a stale band
-- Worth remembering: **`grim` cannot see this class of bug.** It re-composites on
-  capture, so damage-tracking smear never shows up in a screenshot — it has to be
-  looked at on the actual screen
+| | surface resizes | transparent band inside the surface | verdict |
+| --- | --- | --- | --- |
+| Original | per frame, on shrink | on grow | "laggy and not smooth" |
+| Ease the panel inside a held window | 2 per animation | for the whole animation | "drag trails" |
+| Glue the window to the panel | per frame | never | "still jitters" |
+
+- [x] A blurred layer surface gives you those two ways to fail and no third. Easing the
+      surface reconfigures it sixty times a second and the content lags the geometry.
+      Holding it larger leaves a band Hyprland will not repaint under blur
+- [x] So the height snaps: one commit, no band, no reconfiguring. The dashboard's pages
+      swap outright rather than cross-fading, since a page fading out would spend its
+      last frames clipped to the incoming height. The tab underline carries the motion
+- [x] Also removed the dashboard's own height easing, which had been running a second
+      curve in series with Popout's
+
+Worth remembering: **`grim` cannot see any of this.** It re-composites on capture, so
+damage-tracking smear never appears in a screenshot — it has to be judged on the screen.
 
 ## Later
 

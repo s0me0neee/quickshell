@@ -67,23 +67,18 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     implicitWidth: panel.width
 
-    // The window and the panel are always exactly the same height, and the animation
-    // lives here rather than on the panel.
+    // The height is not animated, and that is deliberate — three attempts got here.
     //
-    // The tempting version — hold the window at the taller of the two ends and ease the
-    // panel inside it — leaves a band that is inside the surface but transparent for the
-    // length of the animation. Hyprland blurs these surfaces, and it does not reliably
-    // repaint that band, so the panel smears behind itself. Keeping the surface glued to
-    // the panel means there is never such a band. It costs a reconfigure per frame, which
-    // is what a resizing window does anyway.
-    property real panelHeight: panel.targetHeight
-    implicitHeight: panelHeight + Appearance.popoutGap
-
-    Behavior on panelHeight {
-        Anim {
-            easing.bezierCurve: Appearance.curveEmphasized
-        }
-    }
+    // A blurred layer surface gives you two ways to fail and no third option. Easing the
+    // surface itself reconfigures it sixty times a second, and the content lags the
+    // geometry: jitter. Holding the surface at the taller end and easing a panel inside
+    // it leaves a band that is inside the surface but transparent for the length of the
+    // animation, which Hyprland does not reliably repaint under blur: the panel smears
+    // behind itself. Both were tried and both were visible.
+    //
+    // So the height snaps, in one commit, and the motion people actually notice — the
+    // content changing — is a cross-fade, which costs no resize at all.
+    implicitHeight: panel.targetHeight + Appearance.popoutGap
 
     WlrLayershell.namespace: "qs-popout"
     WlrLayershell.layer: WlrLayer.Top
@@ -110,8 +105,8 @@ PanelWindow {
 
         y: Appearance.popoutGap - 10 * (1 - root.progress)
         width: (root.contentWidth > 0 ? root.contentWidth : column.implicitWidth) + Appearance.spacingLarge * 2
-        // Follows the window exactly; the easing is on the window's side of this
-        height: root.panelHeight
+        // Exactly the surface, always: never a transparent band for blur to go stale on
+        height: targetHeight
         radius: Appearance.radiusPanel
         color: Theme.panel
         border.width: 1
