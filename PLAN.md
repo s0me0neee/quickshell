@@ -98,6 +98,27 @@ DesktopEntries, GlobalShortcut, IdleMonitor. **No `quickshell-git` needed.**
 Baseline to beat (measured 2026-09-15): the parts being replaced use
 swaync 134 MB + waybar 92 MB + polkit-gnome 37 MB ≈ **263 MB RSS**, ~0.4% CPU.
 
+### The visualiser's cost (measured 2026-09-17)
+
+Rule 1 says nothing loops forever, and the audio visualiser is the one thing in the
+shell that redraws continuously. So it is wired to be absent rather than idle: cava is
+launched only while the media card is on screen *and* audio is playing, and killed the
+moment either stops. Measured as a share of one core, media playing throughout:
+
+| State | shell | cava |
+| --- | --- | --- |
+| Media card closed | 0.2% | not running |
+| Media card open, bars drawing | 5.4% | 1.6–2.6% |
+
+So it costs roughly **7% of one core while you are looking at it, and nothing at all
+when you are not**. Noisy to measure — the figures move by a percent or two between
+runs — but the shape is clear, and `pgrep cava` returns nothing with the card closed.
+
+Worth knowing: the shell's own idle figure with a track playing wanders between 0.2%
+and 2.7% with the card shut, which is more than the "0 frames rendered during 20 s
+idle" recorded in Phase 1. That predates the visualiser; the island's track title is
+the likely cause and has not been chased down.
+
 ---
 
 ## Folder layout

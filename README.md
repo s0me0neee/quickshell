@@ -18,9 +18,12 @@ another machine with a clone and two lines of config.
 | `swaync` | notifications, until Phase 2 replaces it |
 | `wlogout` | *no longer needed* — the session menu replaces it |
 | `networkmanager`, `pipewire`, `power-profiles-daemon`, `upower` | what the status pills read |
+| `bluez` | the control center's Bluetooth tile and device list |
+| `cava` | the media card's visualiser. Without it the card simply draws no bars |
+| `rust` | builds `weather/`, below. Not needed at runtime |
 
 ```sh
-sudo pacman -S quickshell matugen ttf-jetbrains-mono ttf-firacode-nerd
+sudo pacman -S quickshell matugen ttf-jetbrains-mono ttf-firacode-nerd bluez cava
 ```
 
 ## Install
@@ -50,6 +53,23 @@ The palette is generated state, not config, so it lives in `~/.local/state` and 
 shows up as a change in this repo. `Theme.qml` watches that file and recolours the
 shell live, with no restart. Until matugen has run once, the shell falls back to the
 palette hardcoded in `common/Theme.qml`.
+
+**3. Weather** — build the fetcher once:
+
+```sh
+cd ~/.config/quickshell/weather && cargo build --release
+```
+
+`weather/` is a small program that asks NOAA for the hourly forecast and prints one JSON
+object; `services/Weather.qml` runs it every 20 minutes and caches the last good answer
+in `~/.cache/quickshell/`. Skip this and the dashboard's weather page says so instead of
+breaking. Two things worth knowing:
+
+- **NOAA only covers the United States.** The program says as much rather than failing
+  silently.
+- It geolocates by public IP, so **a VPN puts the forecast wherever the exit node is**.
+  Set `QS_WEATHER_LATLON=37.77,-122.42` to pin it, and `QS_WEATHER_CONTACT` to an email
+  or repo URL — NOAA throttles anonymous callers first.
 
 ## Running
 

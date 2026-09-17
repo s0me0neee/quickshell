@@ -143,8 +143,51 @@ Item {
                 }
             }
 
+            // Sits in the slack the layout already had between the chips and the progress
+            // line, so switching it on never makes the card taller.
+            //
+            // cava runs only while this is both on screen and playing, and the process is
+            // killed rather than idled the moment either stops — see services/Cava.qml.
             Item {
+                id: visualiser
+
+                readonly property bool wanted: root.active && Media.playing
+                readonly property real slot: width / Cava.bars
+
+                Layout.fillWidth: true
                 Layout.fillHeight: true
+                Layout.minimumHeight: 34
+                Layout.bottomMargin: 6
+                clip: true
+
+                onWantedChanged: wanted ? Cava.watch() : Cava.unwatch()
+
+                Component.onDestruction: {
+                    if (wanted)
+                        Cava.unwatch();
+                }
+
+                Repeater {
+                    model: Cava.bars
+
+                    Rectangle {
+                        required property int index
+                        readonly property real level: Cava.values[index] ?? 0
+
+                        // No Behavior on height: cava is already sending thirty frames a
+                        // second, and easing on top of that only adds lag and redraws
+                        x: index * visualiser.slot
+                        y: visualiser.height - height
+                        width: Math.max(2, visualiser.slot - 4)
+                        height: Math.max(3, visualiser.height * level)
+                        // Capped by the shorter side, or a quiet bar rounds into an oval
+                        radius: Math.min(width, height) / 2
+                        color: Theme.primary
+                        // Silence fades out altogether rather than leaving a row of dashes
+                        // sitting above the progress line, where it reads as a second one
+                        opacity: level < 0.02 ? 0 : 0.3 + 0.55 * level
+                    }
+                }
             }
 
             WavyProgress {

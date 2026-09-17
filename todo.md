@@ -11,15 +11,27 @@
 
 ## Now
 
+### 9. Settings page — **next, and needs the page list agreed first**
+
+Only the settings that get changed often, and the ones that are a pain to change by
+hand. Not a second copy of every dotfile. Clavis's shape: a navigation rail down the
+left, one page at a time on the right, cards inside a page — drawn in our own glass.
+
+- [ ] Agree the page list before building any of it
+- [ ] A window, not a popout: it is too big to hang off the bar
+- [ ] Settings persist to JSON outside git, next to `colors.json`
+
+## Done in this round
+
 ### 4. Keep awake toggle
 
 A fifth tile in the control center. `IdleInhibitor` is in `Quickshell.Wayland` in 0.3.1,
 so this needs no external process and no new dependency. Worth having: hypridle locks the
 session at 10 min and suspends at 30, which fights anything watched fullscreen.
 
-- [ ] `services/Idle.qml` — the inhibitor, plus the time it was switched on
-- [ ] Tile in the control center, subtitle "Normal sleep" / "Awake since 21:40"
-- [ ] Survives a shell reload (`PersistentProperties`)
+- [x] `services/Idle.qml` — the Wayland inhibitor, plus the time it was switched on
+- [x] Tile in the control center, spanning the row, subtitle "Normal sleep" / "Since 21:40"
+- [x] Survives a shell reload (`PersistentProperties`)
 
 ### 5. Dashboard, under the clock
 
@@ -30,10 +42,14 @@ stretches toward the tab you picked and then contracts behind it. One page at a 
 **Clean and simple is the brief.** Enough to understand at a glance, not a wall of
 figures. If a page needs a scrollbar it is doing too much.
 
-- [ ] Tab strip component, in our own motion language rather than a copied TabBar
-- [ ] Calendar page — what the popout already draws
-- [ ] Weather page (see 7)
-- [ ] System page (see 8)
+- [x] `components/TabStrip.qml` — the underline stretches toward the tab you picked and
+      contracts behind it, from two numbers chasing the same index at different speeds
+- [x] Calendar page — what the popout already drew, lifted out of the Popout
+- [x] Weather page
+- [x] System page
+- Gotcha worth remembering: a `ColumnLayout` nested straight inside a `RowLayout`
+  sizes itself from its contents and ignores `Layout.fillWidth`. Both the dials and the
+  hourly columns huddled at the left until each was wrapped in a plain `Item`
 
 ### 6. Audio visualiser, in the media card
 
@@ -46,12 +62,11 @@ step.
 **Watch the cost.** This is the one thing here that redraws continuously, and PLAN.md's
 performance rules say nothing may loop while idle. So:
 
-- [ ] cava starts only when the card is open *and* something is actually playing, and is
-      killed the moment either stops — not left running at a lower frame rate
-- [ ] Ask cava for few bars and a modest frame rate; the card is small
-- [ ] Measure it. `intel_gpu_top` with the card open, and again with it closed, and write
-      both numbers into PLAN.md next to the existing idle measurement. If it costs more
-      than it is worth, it comes out
+- [x] cava starts only when the card is open *and* something is actually playing, and is
+      killed the moment either stops. `pgrep cava` returns nothing with the card shut
+- [x] 28 bars at 30fps, config in `assets/cava.conf`
+- [x] Measured, and written into PLAN.md: about 7% of one core while on screen, nothing
+      when closed. Left in on that basis — say the word if it is not worth it
 
 ### 7. Weather
 
@@ -61,30 +76,22 @@ performance rules say nothing may loop while idle. So:
 NOAA's hourly forecast. It is a library inside the deskdock workspace and speaks protobuf
 to the firmware, so the shell cannot use it as-is.
 
-- [ ] `weather/` crate here: the NOAA fetch and geolocation, no `deskdock-proto`, a
-      `main.rs` that prints one JSON object
-- [ ] `services/Weather.qml` — runs it on a long timer, caches the last good reading to
-      disk so a cold start is not blank
-- [ ] Note: NOAA is US-only, and the crate already errors outside the United States
-- [ ] README: the crate needs `cargo build --release` once; say so
+- [x] `weather/` crate here: three GETs and serde_json, no `deskdock-proto` and no
+      generated NOAA client. Two tests. `QS_WEATHER_LATLON` overrides the IP lookup,
+      which matters with the VPN on
+- [x] `services/Weather.qml` — refreshes every 20 minutes, caches the last good reading
+      to `~/.cache/quickshell/weather.json` so a cold start is not blank
+- [x] NOAA is US-only; the crate says so rather than failing silently
+- [x] README: dependencies, the one-off `cargo build --release`, and the VPN caveat
 
 ### 8. CPU and memory
 
 `/proc/stat` and `/proc/meminfo`, read on a timer while the page showing them is open, and
 not otherwise. No dependency, no daemon.
 
-- [ ] `services/SysStats.qml`
-- [ ] Ring per figure, in the same dial language as the volume and battery
-
-### 9. Settings page
-
-Only the settings that get changed often, and the ones that are a pain to change by hand.
-Not a second copy of every dotfile. Clavis's shape: a navigation rail down the left, one
-page at a time on the right, cards inside a page — drawn in our own glass, not theirs.
-
-- [ ] Agree the page list before building any of it
-- [ ] A window, not a popout: it is too big to hang off the bar
-- [ ] Settings persist to JSON outside git, next to `colors.json`
+- [x] `services/SysStats.qml` — CPU from /proc/stat deltas, memory from MemAvailable,
+      plus uptime and load. Reader-counted: the timer only runs while the page is open
+- [x] Ring per figure, in the same dial language as the volume and battery
 
 ## Later
 
