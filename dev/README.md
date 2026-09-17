@@ -1,5 +1,9 @@
 # dev/ — running the shell without Hyprland
 
+> Chasing a rendering glitch on the real thing instead? See
+> [hyprland.md](hyprland.md) — screenshots cannot see compositor artifacts,
+> and `dev/capture.sh` is how to get at them.
+
 Quickshell only runs on Wayland, so on a Mac or any non-Linux machine there is no way to
 see what a change looks like. This runs the *real* shell files under the plain `qml` tool
 instead, against fake Quickshell services. Nothing in the shell itself is aware of it.
