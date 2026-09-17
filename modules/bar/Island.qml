@@ -54,8 +54,12 @@ Rectangle {
     readonly property color hourColor: Theme.surfaceText
     readonly property color minuteColor: Theme.primary
 
-    readonly property int h0: Math.floor(clock.hours / 10)
-    readonly property int h1: clock.hours % 10
+    // 12-hour drops the leading zero rather than showing "09", which is what a clock
+    // face does; the rolling digit strip just gets a blank to roll to
+    readonly property int hour12: clock.hours % 12 === 0 ? 12 : clock.hours % 12
+    readonly property int shownHours: Settings.data.twelveHour ? hour12 : clock.hours
+    readonly property int h0: Math.floor(shownHours / 10)
+    readonly property int h1: shownHours % 10
     readonly property int m0: Math.floor(clock.minutes / 10)
     readonly property int m1: clock.minutes % 10
 

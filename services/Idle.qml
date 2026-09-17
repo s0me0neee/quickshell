@@ -16,7 +16,7 @@ Singleton {
     readonly property alias since: props.since
 
     // The line under "Keep awake" on its tile
-    readonly property string status: enabled ? `Since ${Qt.formatTime(props.since, "HH:mm")}` : "Normal sleep"
+    readonly property string status: enabled ? `Since ${Settings.time(props.since)}` : "Normal sleep"
 
     function toggle(): void {
         props.enabled = !props.enabled;

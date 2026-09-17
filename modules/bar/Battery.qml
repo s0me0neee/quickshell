@@ -14,7 +14,7 @@ CircleButton {
     readonly property bool low: Power.discharging && !Power.charging && Power.percentage <= 0.15
     readonly property bool warn: Power.discharging && !Power.charging && Power.percentage <= 0.3
 
-    visible: Power.hasBattery
+    visible: Power.hasBattery && Settings.data.showBattery
     icon: {
         if (Power.charging)
             return Icons.batteryCharging;

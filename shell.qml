@@ -7,6 +7,7 @@ import Quickshell
 import qs.modules.bar
 import qs.modules.notifications
 import qs.modules.session
+import qs.modules.settings
 import qs.services
 
 ShellRoot {
@@ -19,5 +20,11 @@ ShellRoot {
         active: Session.menuOpen || (item?.progress ?? 0) > 0.01
 
         SessionMenu {}
+    }
+
+    LazyLoader {
+        active: Settings.menuLive
+
+        SettingsWindow {}
     }
 }

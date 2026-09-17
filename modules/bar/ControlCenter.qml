@@ -179,6 +179,25 @@ Popout {
         font.pixelSize: Appearance.fontSizeSmall
     }
 
+    Divider {}
+
+    // The way into the settings window. No bar button of its own: this is not something
+    // you open often enough to spend a seat on
+    ListItem {
+        icon: Icons.settings
+        label: "Settings"
+        onActivated: {
+            root.open = false;
+            Settings.open();
+        }
+
+        Icon {
+            text: Icons.chevronRight
+            size: 16
+            color: Theme.surfaceVariantText
+        }
+    }
+
     component Heading: StyledText {
         font.pixelSize: Appearance.fontSize + 2
         font.weight: Font.DemiBold

@@ -2,6 +2,7 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import qs.services
 
 // Sizes, fonts and motion shared by every part of the shell.
 Singleton {
@@ -17,9 +18,10 @@ Singleton {
     // Height of the bar strip; popouts hang below it. Sized to the tallest thing in it.
     readonly property int barHeight: islandHeight
 
-    // Shapes
-    readonly property int radiusPanel: 24
-    readonly property int radiusItem: 14
+    // Shapes. The panel radius is a setting; the item radius follows it so a rounder
+    // panel doesn't end up with square rows inside it
+    readonly property int radiusPanel: Settings.data.radiusPanel
+    readonly property int radiusItem: Math.round(radiusPanel * 14 / 24)
 
     // Spacing
     readonly property int spacingSmall: 4
@@ -30,8 +32,8 @@ Singleton {
     // Fonts
     readonly property string fontFamily: "JetBrains Mono"
     readonly property string iconFamily: "FiraCode Nerd Font"
-    readonly property int fontSize: 14
-    readonly property int fontSizeSmall: 12
+    readonly property int fontSize: Settings.data.fontSize
+    readonly property int fontSizeSmall: fontSize - 2
     readonly property int iconSize: 18
     // App icons come from the icon theme rather than the font, and a theme only holds
     // artwork at the sizes it ships. Ask for one it doesn't have and Qt renders the

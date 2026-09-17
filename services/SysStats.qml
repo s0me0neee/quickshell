@@ -20,7 +20,7 @@ Singleton {
     property real memoryUsedKb: 0
     property real memoryTotalKb: 0
 
-    readonly property string memoryText: `${gib(memoryUsedKb)} / ${gib(memoryTotalKb)} GiB`
+    readonly property string memoryText: `${scaled(memoryUsedKb)} / ${scaled(memoryTotalKb)} ${Settings.memoryUnit}`
 
     // Runnable processes averaged over the last minute, not a percentage
     property real loadAverage: 0
@@ -50,8 +50,9 @@ Singleton {
         readers = Math.max(0, readers - 1);
     }
 
-    function gib(kb: real): string {
-        return (kb / 1048576).toFixed(1);
+    // GiB or GB, whichever the settings ask for
+    function scaled(kb: real): string {
+        return Settings.memory(kb).toFixed(1);
     }
 
     // /proc/stat's first line counts jiffies since boot per state. The load over the last

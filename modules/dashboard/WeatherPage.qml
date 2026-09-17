@@ -14,7 +14,7 @@ ColumnLayout {
     readonly property var columns: (Weather.hourly ?? []).filter((h, i) => i % 2 === 0).slice(0, 5)
 
     function hourLabel(iso: string): string {
-        return Qt.formatTime(new Date(iso), "HH");
+        return Settings.hour(new Date(iso));
     }
 
     spacing: Appearance.spacing
@@ -40,7 +40,7 @@ ColumnLayout {
                 spacing: 2
 
                 StyledText {
-                    text: Weather.temperature
+                    text: Math.round(Settings.temperature(Weather.now?.temperature ?? 0))
                     font.pixelSize: 34
                     font.weight: Font.Light
                 }
@@ -48,7 +48,7 @@ ColumnLayout {
                 StyledText {
                     Layout.alignment: Qt.AlignTop
                     Layout.topMargin: 6
-                    text: `°${Weather.unit}`
+                    text: `°${Settings.temperatureUnit}`
                     color: Theme.surfaceVariantText
                     font.pixelSize: Appearance.fontSize
                 }
@@ -91,7 +91,7 @@ ColumnLayout {
 
         Detail {
             icon: Icons.windy
-            label: `${Math.round(Weather.now?.wind ?? 0)} ${Weather.now?.windDirection ?? ""}`
+            label: `${Math.round(Settings.wind(Weather.now?.wind ?? 0))} ${Settings.windUnit} ${Weather.now?.windDirection ?? ""}`
         }
 
         Item {
@@ -147,7 +147,7 @@ ColumnLayout {
 
                     StyledText {
                         Layout.alignment: Qt.AlignHCenter
-                        text: `${Math.round(column.modelData.temperature)}°`
+                        text: `${Math.round(Settings.temperature(column.modelData.temperature))}°`
                         font.pixelSize: Appearance.fontSizeSmall
                         font.weight: Font.DemiBold
                     }
@@ -187,7 +187,7 @@ ColumnLayout {
         Layout.fillWidth: true
         visible: Weather.available
         horizontalAlignment: Text.AlignRight
-        text: `Updated ${Qt.formatTime(Weather.updated, "HH:mm")}`
+        text: `Updated ${Settings.time(Weather.updated)}`
         color: Theme.textDim
         font.pixelSize: Appearance.fontSizeSmall - 1
 

@@ -9,19 +9,29 @@
 3. Control center — brightness and the power profile folded into one button, plus the
    Wi-Fi / Bluetooth / microphone / do-not-disturb tiles and the paired-device list
 
-## Now
+## Done in this round
 
-### 9. Settings page — **next, and needs the page list agreed first**
+### 9. Settings page
 
 Only the settings that get changed often, and the ones that are a pain to change by
 hand. Not a second copy of every dotfile. Clavis's shape: a navigation rail down the
 left, one page at a time on the right, cards inside a page — drawn in our own glass.
 
-- [ ] Agree the page list before building any of it
-- [ ] A window, not a popout: it is too big to hang off the bar
-- [ ] Settings persist to JSON outside git, next to `colors.json`
+**Decided:** four pages, opened from a `⚙ Settings ›` row at the bottom of the control
+center. No new bar button, no keybind for now.
 
-## Done in this round
+- [x] `services/Settings.qml` — one JSON file in `~/.local/state/quickshell/`, next to
+      `colors.json`, so it is generated state and never shows as a repo change
+- [x] The window itself, opened from the control center's `⚙ Settings ›` row
+- [x] **Appearance** — glass opacity, corner radius, base font size
+- [x] **Bar** — which status buttons show, 12/24h clock, which dashboard tab opens first
+- [x] **Media** — visualiser on/off, bar count, frame rate. Changing either number
+      rewrites the generated cava config and restarts cava
+- [x] **Units** — °F/°C, mph/km-h, GiB/GB, applied on the way to the screen so changing
+      one never re-fetches anything
+- [x] Every control reaches the thing it names; checked one at a time
+- **No light/dark switch.** matugen writes one palette for the whole desktop, so the
+  button would recolour Hyprland too. The page says so rather than pretending
 
 ### 4. Keep awake toggle
 
@@ -64,7 +74,8 @@ performance rules say nothing may loop while idle. So:
 
 - [x] cava starts only when the card is open *and* something is actually playing, and is
       killed the moment either stops. `pgrep cava` returns nothing with the card shut
-- [x] 28 bars at 30fps, config in `assets/cava.conf`
+- [x] 28 bars at 30fps by default, both settable; the config is generated into
+      `~/.local/state/quickshell/cava.conf` rather than shipped in the repo
 - [x] Measured, and written into PLAN.md: about 7% of one core while on screen, nothing
       when closed. Left in on that basis — say the word if it is not worth it
 
@@ -93,8 +104,21 @@ not otherwise. No dependency, no daemon.
       plus uptime and load. Reader-counted: the timer only runs while the page is open
 - [x] Ring per figure, in the same dial language as the volume and battery
 
+### 10. Popout resize, fixed along the way
+
+The clock panel felt like it dragged when switching tabs. Two causes, both fixed:
+
+- [x] The dashboard eased its own height *and* Popout eased the panel's, so two curves
+      ran in series. The inner one is gone
+- [x] Popout sized the layer surface from the animating height, so the surface was
+      reconfigured on every frame — about 56 resizes per animation. It now steps to
+      whichever end is taller and drops back when the easing finishes: **2 resizes**.
+      This is shared by every panel in the shell, so they all got it
+
 ## Later
 
 - Make it look really nice
+- The session menu's LazyLoader has the same binding-loop shape the settings one had
+  (`active` reading `item.progress`). It has not warned yet, but it is the same bug
 - Right-click a control-center tile to open its detail panel (Clavis does this)
 - VPN tile — there is a ProtonVPN profile in NetworkManager already

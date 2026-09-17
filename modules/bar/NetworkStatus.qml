@@ -12,6 +12,7 @@ CircleButton {
 
     readonly property bool noInternet: Network.connected && (Network.connectivity === NM.NetworkConnectivity.None || Network.connectivity === NM.NetworkConnectivity.Limited || Network.connectivity === NM.NetworkConnectivity.Portal)
 
+    visible: Settings.data.showNetwork
     icon: {
         if (Network.wired)
             return Icons.ethernet;

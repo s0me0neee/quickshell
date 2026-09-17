@@ -56,6 +56,8 @@ Singleton {
     readonly property string refresh: "\u{F0453}"
     readonly property string settings: "\u{F0493}"
     readonly property string tune: "\u{F066A}"
+    readonly property string palette: "\u{F03D8}"
+    readonly property string scale: "\u{F05D1}"
     readonly property string alert: "\u{F0026}"
 
     readonly property list<string> wifi: ["\u{F092F}", "\u{F091F}", "\u{F0922}", "\u{F0925}", "\u{F0928}"]

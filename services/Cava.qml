@@ -7,7 +7,7 @@ import Quickshell.Io
 // Spectrum levels from cava.
 //
 // Caelestia links libcava into a C++ plugin; this config builds nothing, so it runs the
-// cava binary instead and reads the raw levels it prints. Same numbers, no build step.
+// cava binary and reads the raw levels it prints. Same numbers, no build step.
 //
 // This is the one thing in the shell that redraws continuously, so it is wired to stay
 // off by default: cava is only launched while something has called watch(), and the
@@ -16,9 +16,14 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    // Must match `bars` in assets/cava.conf
-    readonly property int bars: 28
-    readonly property string config: `${Quickshell.env("HOME")}/.config/quickshell/assets/cava.conf`
+    readonly property int bars: Settings.data.visualiserBars
+    readonly property int framerate: Settings.data.visualiserFramerate
+
+    // Written rather than shipped: the bar count and frame rate are settings, and a file
+    // in the repo would show up as a change every time one of them moved. Generated
+    // state belongs next to colors.json
+    readonly property string configPath: `${Quickshell.env("HOME")}/.local/state/quickshell/cava.conf`
+    property bool configReady: false
 
     // 0-1 per bar. Zero-filled up front so anything drawing them has a shape to bind to
     // before the first frame arrives
@@ -36,11 +41,52 @@ Singleton {
         readers = Math.max(0, readers - 1);
     }
 
+    // ascii_max_range 100, ';' between bars, newline between frames
+    function configText(): string {
+        return `[general]
+mode = normal
+framerate = ${framerate}
+bars = ${bars}
+autosens = 1
+
+[output]
+method = raw
+raw_target = /dev/stdout
+data_format = ascii
+ascii_max_range = 100
+bar_delimiter = 59
+frame_delimiter = 10
+
+[smoothing]
+noise_reduction = 40
+`;
+    }
+
+    // Dropping configReady stops cava, and raising it starts the new one, so changing
+    // the bar count in the settings restarts it with the new config rather than
+    // leaving the old process running against a file it has already read
+    function writeConfig(): void {
+        configReady = false;
+        config.setText(configText());
+    }
+
+    Component.onCompleted: writeConfig()
+    onBarsChanged: writeConfig()
+    onFramerateChanged: writeConfig()
+
+    FileView {
+        id: config
+
+        path: root.configPath
+        onSaved: root.configReady = true
+        onSaveFailed: error => console.warn(`Cava: could not write ${root.configPath}: ${error}`)
+    }
+
     Process {
         id: proc
 
-        running: root.readers > 0
-        command: ["cava", "-p", root.config]
+        running: root.readers > 0 && root.configReady && Settings.data.visualiser
+        command: ["cava", "-p", root.configPath]
 
         // Falling back to silence rather than leaving the last frame frozen on screen
         onRunningChanged: {

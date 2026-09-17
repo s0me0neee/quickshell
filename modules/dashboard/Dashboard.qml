@@ -16,7 +16,8 @@ Popout {
 
     // Bound to the shell clock from outside, so "today" survives midnight
     property date today: new Date()
-    property int page: 0
+    // Where it opens; flicking between tabs moves it, and closing puts it back
+    property int page: Settings.data.dashboardTab
 
     contentWidth: 320
 
@@ -24,8 +25,10 @@ Popout {
         target: root
 
         function onOpenChanged(): void {
-            if (!root.open)
+            if (!root.open) {
                 calendar.toToday();
+                root.page = Settings.data.dashboardTab;
+            }
         }
     }
 
@@ -53,17 +56,15 @@ Popout {
     // Every page sits at the top-left of the same box, which is as tall as whichever one
     // is showing. The panel behind it animates its own height, so switching pages makes
     // the dashboard grow or shrink rather than jump
+    // No Behavior on implicitHeight here. Popout already eases the panel's height, and
+    // the window's own height follows that — so animating here too ran two curves in
+    // series, which both looked sluggish and resized the layer surface twice a frame.
+    // Jumping to the new page's height lets that one animation do the work.
     Item {
         Layout.fillWidth: true
         Layout.topMargin: Appearance.spacingSmall
         implicitHeight: [calendar, weather, system][root.page]?.implicitHeight ?? 0
         clip: true
-
-        Behavior on implicitHeight {
-            Anim {
-                easing.bezierCurve: Appearance.curveEmphasized
-            }
-        }
 
         CalendarPage {
             id: calendar

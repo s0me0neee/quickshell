@@ -4,6 +4,7 @@ import Quickshell.Services.SystemTray
 import Quickshell.Widgets
 import qs.common
 import qs.components
+import qs.services
 
 // Tray icons in their own glass group; hidden when no app has an icon.
 Pill {
@@ -11,7 +12,7 @@ Pill {
 
     required property QtObject bar
 
-    visible: SystemTray.items.values.length > 0
+    visible: Settings.data.showTray && SystemTray.items.values.length > 0
     padding: Appearance.groupPadding
     spacing: 2
 

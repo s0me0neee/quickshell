@@ -66,8 +66,16 @@ PanelWindow {
     }
     exclusionMode: ExclusionMode.Ignore
     implicitWidth: panel.width
-    // Grow the window at once, shrink it only after the panel finished shrinking
-    implicitHeight: Math.max(panel.targetHeight, panel.height) + Appearance.popoutGap
+    // The window steps, the panel inside it eases.
+    //
+    // Following `panel.height` here instead resized the layer surface on every frame of
+    // the animation — sixty reconfigures a second, which is what made a tall panel feel
+    // like it was dragging. Now the window jumps straight to whichever is taller, the
+    // height it is leaving or the one it is heading for, and only comes back down once
+    // the panel has finished moving. The surface changes size twice per animation, and
+    // the easing everyone actually sees happens inside it.
+    property real windowHeight: panel.targetHeight
+    implicitHeight: windowHeight + Appearance.popoutGap
 
     WlrLayershell.namespace: "qs-popout"
     WlrLayershell.layer: WlrLayer.Top
@@ -104,9 +112,18 @@ PanelWindow {
         scale: 0.94 + 0.06 * root.progress
         transformOrigin: Item.Top
 
+        // Room for both ends of the move before it starts, so a growing panel is never
+        // clipped and a shrinking one doesn't drag the surface down with it
+        onTargetHeightChanged: root.windowHeight = Math.max(root.windowHeight, targetHeight)
+
         Behavior on height {
             Anim {
                 easing.bezierCurve: Appearance.curveEmphasized
+                // Only now is it safe to give the extra height back
+                onRunningChanged: {
+                    if (!running)
+                        root.windowHeight = panel.targetHeight;
+                }
             }
         }
 

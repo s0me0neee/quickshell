@@ -24,6 +24,7 @@ CircleButton {
         return Icons.pick(Icons.volume, Audio.volume);
     }
 
+    visible: Settings.data.showVolume
     icon: glyph
     iconSize: 16
     iconColor: Audio.muted ? Theme.critical : Theme.secondaryContainerText

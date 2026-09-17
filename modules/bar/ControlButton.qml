@@ -12,6 +12,7 @@ CircleButton {
 
     required property QtObject bar
 
+    visible: Settings.data.showControlCenter
     icon: Icons.tune
     iconSize: 16
     fill: {
