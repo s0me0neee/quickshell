@@ -200,6 +200,7 @@ PanelWindow {
                             width: history.width
                             label: modelData.preview
                             subtitle: modelData.id
+                            textFormat: Text.PlainText
                             icon: ""
                             highlighted: index === root.selected
                             onActivated: Clipboard.paste(modelData)
@@ -211,7 +212,7 @@ PanelWindow {
                                 anchors.bottom: parent.bottom
                                 width: 3
                                 radius: width / 2
-                                visible: parent.highlighted
+                                visible: root.highlighted
                                 color: Theme.primary
                             }
 
@@ -253,6 +254,7 @@ PanelWindow {
                         anchors.margins: Appearance.spacingLarge
                         visible: Clipboard.previewPath === "" || !Clipboard.previewMime.startsWith("image/")
                         text: Clipboard.filteredEntries[root.selected]?.preview ?? "Select an item"
+                        textFormat: Text.PlainText
                         color: Theme.surfaceText
                         wrapMode: Text.Wrap
                         elide: Text.ElideRight
