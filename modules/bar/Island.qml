@@ -209,7 +209,7 @@ Rectangle {
 
                     anchors.verticalCenter: parent.verticalCenter
                     implicitWidth: titleText.width
-                    implicitHeight: 19
+                    implicitHeight: 21
                     clip: true
 
                     StyledText {
@@ -222,7 +222,7 @@ Rectangle {
                         width: Math.min(implicitWidth, 260)
                         height: titleClip.height
                         color: Media.playing ? Theme.surfaceText : Qt.alpha(Theme.surfaceText, 0.55)
-                        font.pixelSize: Appearance.fontSize
+                        font.pixelSize: Appearance.fontSize + 2
                         font.italic: !Media.playing
                         onPendingChanged: flip.restart()
                         Component.onCompleted: text = pending
@@ -311,7 +311,7 @@ Rectangle {
 
                 StyledText {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: Qt.formatDate(clock.date, "ddd dd MMM")
+                    text: Qt.formatDate(clock.date, "ddd MMM dd")
                     color: Theme.primary
                     font.pixelSize: Appearance.fontSize
                     font.weight: Font.Bold
@@ -408,7 +408,7 @@ Rectangle {
 
     Tooltip {
         target: clockRow
-        text: Qt.formatDate(clock.date, "dddd, d MMMM yyyy")
+        text: Qt.formatDate(clock.date, "dddd, MMMM d, yyyy")
         show: clockMouse.containsMouse && !root.showDate && !calendar.open
     }
 

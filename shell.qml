@@ -5,6 +5,7 @@
 import QtQuick
 import Quickshell
 import qs.modules.bar
+import qs.modules.clipboard
 import qs.modules.notifications
 import qs.modules.session
 import qs.modules.settings
@@ -15,9 +16,15 @@ ShellRoot {
 
     Popups {}
 
+    LazyLoader {
+        active: Clipboard.live
+
+        ClipboardWindow {}
+    }
+
     // Built on first use, and kept only until it has faded back out
     LazyLoader {
-        active: Session.menuOpen || (item?.progress ?? 0) > 0.01
+        active: Session.menuLive
 
         SessionMenu {}
     }

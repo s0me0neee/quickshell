@@ -29,8 +29,11 @@ common/              Singletons, no UI and no system calls
 components/          reusable widgets (Pill, CircleButton, Popout, Icon, ...)
 services/            Singletons that talk to the system
 modules/bar/         the bar and everything in it
+modules/dashboard/   the clock's calendar / weather / system popout
 modules/notifications/  popups + notification list
 modules/session/     the full-screen session menu
+modules/settings/    the settings window
+modules/clipboard/   the clipboard history window
 dev/                 off-machine preview (stubs for Quickshell, mock data)
 matugen/             matugen colour template
 hypr/                Hyprland snippet (blur rules, autostart, restart bind)
@@ -79,8 +82,11 @@ are needed.
   holding the object showed a dead player's last track. `autoBus` only moves when a
   player *starts* (so pausing the shown player doesn't yank the bar to another app).
 - **Notifications** (`services/Notifs.qml` + `NotifEntry.qml`): entries are copied out
-  of the server object so they outlive the sending app. `keepOnReload` plus adoption in
-  `Component.onCompleted` keeps the list across a config reload.
+  of the server object so they outlive the sending app — `NotifEntry` holds its own copy
+  of summary/body/etc. and mirrors later edits through a `Connections`. The list is
+  cleared on reload (`keepOnReload: false`); only DND survives (`PersistentProperties`
+  with `reloadableId: "notifs"`). Entries that have stopped popping are held in
+  `Popups.qml`'s own `shown` list until the sweep timer drops them, so they can slide out.
 - **Audio** (`services/Audio.qml`): volume/mute are only valid on *tracked* nodes, so
   `PwObjectTracker { objects: [sink, source, ...streams] }` must include every node whose
   level is shown.
@@ -93,7 +99,8 @@ are needed.
 - **Hyprland layer rules apply only when a surface is created.** After editing
   `hypr/quickshell.conf` blur/alpha rules, restart the shell (`qs kill; qs -d -n`).
 - **Layer namespaces must start with `qs-`** for the blur `layerrule` to match
-  (`WlrLayershell.namespace: "qs-bar"`, `"qs-popout"`, `"qs-session"`, `"qs-notifications"`).
+  (`WlrLayershell.namespace: "qs-bar"`, `"qs-popout"`, `"qs-session"`,
+  `"qs-settings"`, `"qs-clipboard"`, `"qs-notifications"`, `"qs-idle"`).
 - **A `Behavior` never runs on a binding's first evaluation.** To animate an item's
   *initial* state, declare the property as a plain `0` and bind it in
   `Component.onCompleted` with `Qt.binding(...)` (`SessionMenu.qml`, `Popups.qml`).
@@ -101,9 +108,23 @@ are needed.
   after they settle (`Popups.qml`'s `sweep` timer).
 - **A `Repeater` on a plain array rebuilds every delegate when the array is reassigned.**
   Wrap in `ScriptModel { values: ... }` when the array changes often (`Popups.qml`).
-- **`onOpenChanged` on a `Popout` subclass:** implement it with `Connections`, not a
-  handler. A handler on the subclass root would overwrite `Popout`'s own `onOpenChanged`
-  (which closes sibling popouts). See `Calendar.qml`.
+- **Never key a `LazyLoader.active` off `item.progress`.** `active` would then depend on
+  an item that only exists while `active` is true. Count the linger in the singleton
+  instead (`Settings.menuLive`, `Session.menuLive`, `Clipboard.live`), with a timer a
+  little longer than the close animation (`Appearance.animNormal`, so 450 ms).
+- **Any signal handler on a `Popout` subclass root that `Popout` also handles has to be
+  a `Connections`, not a handler.** `Popout` uses `onOpenChanged` to claim
+  `PopoutState.current` and close siblings, and `onVisibleChanged` to give its surface
+  height back; a handler on the subclass root replaces those instead of adding to them.
+  See `Dashboard.qml`, `ControlCenter.qml`, `TrayMenu.qml`, `NetworkPanel.qml`.
+- **`cliphist delete` reads the entry to drop from stdin.** An id argument is ignored and
+  it still exits 0 without touching the history, so `["cliphist", "delete", id]` is a
+  silent no-op; pipe the id in (`Clipboard.deleteEntry`).
+- **Hyprland's `global` dispatcher addresses a shortcut by `appid:name`.** A
+  `bind = SUPER, V, global, qs:clipboard` only fires if something registers
+  `GlobalShortcut { appid: "qs"; name: "clipboard" }`; Quickshell's default appid is
+  `quickshell`, not `qs`. `services/Clipboard.qml` registers the one for `SUPER+V`, and
+  PLAN.md's `qs:launcher` / `qs:calc` binds will each need the same.
 - **Do not fade notification cards to opacity 0.** Hyprland's `ignore_alpha 0.1` rule
   skips sub-0.1-alpha surfaces, so a fading card smears the blur region every frame.
   Slide them instead (`Popups.qml`). The notifications window is also kept at a **fixed**
@@ -115,9 +136,11 @@ are needed.
 - **`Icon.qml` centers by ink box, not the font box.** Nerd Font glyph boxes are uneven;
   it uses `FontMetrics`/`TextMetrics.tightBoundingRect`, never `Text.baselineOffset`.
   Use `nudgeX`/`nudgeY` for glyphs whose ink reads off-centre.
-- **`Popout.anchorX`** computes the target's screen X by manually walking
-  `target.x + parent.x + ...`; there is a leftover dead `return` beneath it. Don't rely
-  on `mapToItem` for bar anchoring.
+- **`Popout.anchorX` reads `target.x`, `target.width` and its parents' `x` purely to
+  register dependencies**, then returns `bar.margins.left + target.mapToItem(...).x`.
+  `mapToItem` is a method call and registers nothing, so deleting those reads "because
+  only the return matters" silently stops popouts re-anchoring when the bar re-lays out
+  (the island growing when media starts, tray items coming and going).
 
 ## dev/ preview (running without Hyprland)
 

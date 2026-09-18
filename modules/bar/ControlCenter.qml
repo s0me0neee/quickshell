@@ -25,10 +25,18 @@ Popout {
     contentWidth: 320
 
     // A panel can be plugged in or unplugged while the shell runs, and the list is the
-    // one thing the level watcher can't tell us about
-    onOpenChanged: {
-        if (open)
-            Brightness.refresh();
+    // one thing the level watcher can't tell us about.
+    //
+    // Connections rather than a handler on the root: a handler here would replace
+    // Popout's own onOpenChanged, which is what registers this as the open popout and
+    // closes any other one
+    Connections {
+        target: root
+
+        function onOpenChanged(): void {
+            if (root.open)
+                Brightness.refresh();
+        }
     }
 
     GridLayout {

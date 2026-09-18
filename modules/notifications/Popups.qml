@@ -21,10 +21,10 @@ Variants {
         function sync(): void {
             const live = Notifs.popups;
             const kept = shown.filter(n => live.includes(n) || !n.closed);
-            for (const entry of live)
-                if (!kept.includes(entry))
-                    kept.unshift(entry);
-            shown = kept;
+            // Newest first, matching Notifs.popups. Unshifting each missing entry in turn
+            // would reverse the order of a burst that arrives in one go
+            const fresh = live.filter(n => !kept.includes(n));
+            shown = [...fresh, ...kept];
             sweep.restart();
         }
 

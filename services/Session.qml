@@ -11,6 +11,23 @@ Singleton {
 
     property bool menuOpen: false
 
+    // What the loader in shell.qml keys off. Asking the window for its own animation
+    // progress from there is a binding loop — `active` would depend on an item that only
+    // exists while `active` — so the linger is counted here instead
+    readonly property bool menuLive: menuOpen || linger.running
+
+    onMenuOpenChanged: {
+        if (!menuOpen)
+            linger.restart();
+    }
+
+    // Long enough to cover the window's close animation
+    Timer {
+        id: linger
+
+        interval: 450
+    }
+
     readonly property list<var> actions: [
         {
             key: "l",

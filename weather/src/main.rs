@@ -47,7 +47,16 @@ fn run() -> Result<Value, Box<dyn std::error::Error>> {
         .build()?;
 
     let place = locate(&client)?;
-    let hourly_url = forecast_url(&client, &place)?;
+    let point = point(&client, &place)?;
+    // NOAA's own name for the point, not the IP database's: the latter reports
+    // whatever coarse range the ISP registered ("The Bronx" for an address
+    // elsewhere, most famously), and only NOAA's label is guaranteed
+    // to describe the grid the forecast actually is for.
+    let city = match noaa_name(&point) {
+        name if !name.is_empty() => name,
+        _ => place.city,
+    };
+    let hourly_url = forecast_url(&point)?;
     let forecast: Value = client.get(&hourly_url).send()?.error_for_status()?.json()?;
 
     let periods = forecast["properties"]["periods"]
@@ -69,7 +78,7 @@ fn run() -> Result<Value, Box<dyn std::error::Error>> {
 
     Ok(json!({
         "ok": true,
-        "city": place.city,
+        "city": city,
         "updated": Local::now().to_rfc3339(),
         "now": current,
         "hourly": hours.iter().take(HOURS).collect::<Vec<_>>(),
@@ -96,8 +105,19 @@ fn locate(client: &reqwest::blocking::Client) -> Result<Place, Box<dyn std::erro
         });
     }
 
+    // ip-api is IPv4-only, so letting it read our address gets the IPv4 one, which the
+    // ISP files under the Bronx. The IPv6 address places correctly, so ask for it
+    // (api64 falls back to IPv4 without v6) and hand it over, as deskdock does
+    let ip = client
+        .get("https://api64.ipify.org")
+        .send()?
+        .error_for_status()?
+        .text()?;
     let geo: Value = client
-        .get("http://ip-api.com/json/?fields=status,message,country,city,lat,lon")
+        .get(format!(
+            "http://ip-api.com/json/{}?fields=status,message,country,city,lat,lon",
+            ip.trim()
+        ))
         .send()?
         .error_for_status()?
         .json()?;
@@ -118,20 +138,37 @@ fn locate(client: &reqwest::blocking::Client) -> Result<Place, Box<dyn std::erro
 
 /// NOAA resolves a coordinate to a grid square first, and only that square knows
 /// its own forecast URL.
-fn forecast_url(
+fn point(
     client: &reqwest::blocking::Client,
     place: &Place,
-) -> Result<String, Box<dyn std::error::Error>> {
+) -> Result<Value, Box<dyn std::error::Error>> {
     let url = format!(
         "https://api.weather.gov/points/{:.4},{:.4}",
         place.latitude, place.longitude
     );
-    let point: Value = client.get(&url).send()?.error_for_status()?.json()?;
+    Ok(client.get(&url).send()?.error_for_status()?.json()?)
+}
 
+fn forecast_url(point: &Value) -> Result<String, Box<dyn std::error::Error>> {
     point["properties"]["forecastHourly"]
         .as_str()
         .map(String::from)
         .ok_or_else(|| "NOAA gave no hourly forecast for this point".into())
+}
+
+/// NOAA's `relativeLocation`: the city it files the point under, e.g.
+/// "New York, NY". Empty wherever NOAA has no name for the place.
+fn noaa_name(point: &Value) -> String {
+    let rel = &point["properties"]["relativeLocation"]["properties"];
+    let city = rel["city"].as_str().unwrap_or_default();
+    let state = rel["state"].as_str().unwrap_or_default();
+    if city.is_empty() {
+        String::new()
+    } else if state.is_empty() {
+        city.to_string()
+    } else {
+        format!("{city}, {state}")
+    }
 }
 
 fn hour(period: &Value) -> Result<Value, Box<dyn std::error::Error>> {
@@ -189,6 +226,27 @@ mod tests {
         assert_eq!(wind_speed("6 mph"), 6.0);
         assert_eq!(wind_speed("8 to 12 mph"), 12.0);
         assert_eq!(wind_speed(""), 0.0);
+    }
+
+    #[test]
+    fn reads_noaa_s_place_name() {
+        let point = json!({
+            "properties": {
+                "relativeLocation": {
+                    "properties": { "city": "New York", "state": "NY" }
+                }
+            }
+        });
+        assert_eq!(noaa_name(&point), "New York, NY");
+
+        let no_state = json!({
+            "properties": {
+                "relativeLocation": { "properties": { "city": "Somewhere" } }
+            }
+        });
+        assert_eq!(noaa_name(&no_state), "Somewhere");
+
+        assert_eq!(noaa_name(&json!({})), "");
     }
 
     #[test]

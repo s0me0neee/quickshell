@@ -21,11 +21,14 @@ Popout {
 
     contentWidth: 320
 
+    // The reset waits for `visible`, not `open`: the close is a fade, and putting the
+    // page back as `open` drops would flash the calendar in while the panel is still
+    // fading out. Only once the surface is gone does the page go back where it started.
     Connections {
         target: root
 
-        function onOpenChanged(): void {
-            if (!root.open) {
+        function onVisibleChanged(): void {
+            if (!root.visible) {
                 calendar.toToday();
                 root.page = Settings.data.dashboardTab;
             }

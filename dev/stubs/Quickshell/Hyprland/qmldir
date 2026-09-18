@@ -3,3 +3,4 @@ singleton Hyprland 1.0 Hyprland.qml
 HyprlandWorkspace 1.0 HyprlandWorkspace.qml
 HyprlandMonitor 1.0 HyprlandMonitor.qml
 HyprlandFocusGrab 1.0 HyprlandFocusGrab.qml
+GlobalShortcut 1.0 GlobalShortcut.qml

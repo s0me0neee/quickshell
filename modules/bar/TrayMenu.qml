@@ -13,9 +13,16 @@ Popout {
     property var path: []
     readonly property QsMenuHandle current: path.length > 0 ? path[path.length - 1] : handle
 
-    onOpenChanged: {
-        if (!open)
-            path = [];
+    // Connections rather than a handler on the root: a handler here would replace
+    // Popout's own onOpenChanged, which is what registers this as the open popout and
+    // closes any other one
+    Connections {
+        target: root
+
+        function onOpenChanged(): void {
+            if (!root.open)
+                root.path = [];
+        }
     }
 
     QsMenuOpener {

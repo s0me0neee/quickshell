@@ -9,9 +9,9 @@ import qs.services
 ColumnLayout {
     id: root
 
-    // Every hour NOAA hands over, thinned to every other one — twelve columns in 300px
-    // would be six pixels of text each
-    readonly property var columns: (Weather.hourly ?? []).filter((h, i) => i % 2 === 0).slice(0, 5)
+    // Every hour NOAA hands over, as many as fit in the row; twelve columns in 300px
+    // would leave each one narrower than its own hour label
+    readonly property var columns: (Weather.hourly ?? []).slice(0, 8)
 
     function hourLabel(iso: string): string {
         return Settings.hour(new Date(iso));

@@ -16,11 +16,18 @@ Popout {
     contentWidth: 340
     wantsKeyboard: true
 
-    onVisibleChanged: {
-        if (visible)
-            Network.refresh();
-        else
-            expanded = null;
+    // Connections rather than a handler on the root: a handler here would replace
+    // Popout's own onVisibleChanged, which is what gives the surface its height back
+    // once it is off screen
+    Connections {
+        target: root
+
+        function onVisibleChanged(): void {
+            if (root.visible)
+                Network.refresh();
+            else
+                root.expanded = null;
+        }
     }
 
     // Scan for networks only while the panel is on screen
