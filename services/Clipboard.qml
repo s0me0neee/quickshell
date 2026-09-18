@@ -23,6 +23,9 @@ Singleton {
     // MIME per history id, learned once. A text entry then never spawns a process
     // again: the list's own preview line is already what the panel draws.
     property var mimeById: ({})
+    // `cliphist list` only gives us a truncated preview, but that is enough to
+    // recognize data:image URLs and normalize them before showing the preview.
+    property var dataImageById: ({})
 
     // What the loader in shell.qml keys off. Asking the window for its own animation
     // progress from there is a binding loop — `active` would depend on an item that only
@@ -72,15 +75,27 @@ Singleton {
 
     function parseList(text: string): void {
         const next = [];
+        const dataImages = {};
         for (const line of text.split("\n")) {
             const match = line.match(/^(\d+)\s+(.*)$/);
             if (!match)
                 continue;
+            const rawPreview = match[2] || "Clipboard item";
+            const dataImage = rawPreview.match(/^data:(image\/[^;,]+);base64,/i);
+            if (dataImage) {
+                dataImages[match[1]] = true;
+                next.push({
+                    id: match[1],
+                    preview: `Image address (${dataImage[1]})`
+                });
+                continue;
+            }
             next.push({
                 id: match[1],
-                preview: match[2] || "Clipboard item"
+                preview: rawPreview
             });
         }
+        dataImageById = dataImages;
         entries = next;
     }
 
@@ -108,8 +123,10 @@ Singleton {
         previewMime = known ?? "";
         previewPath = "";
         const wantMime = known === undefined;
-        previewProc.command = wantMime
-            ? ["sh", "-c", `cliphist decode ${id} > "$1" && file --brief --mime-type "$1"`, "clipboard-preview", previewFile]
+        const isDataImage = dataImageById[pendingId] === true;
+        const normalizeDataImage = `if head -c 256 "$1" | grep -q '^data:image/[^;]*;base64,'; then sed 's/^data:[^;]*;base64,//' "$1" | tr -d '\\r\\n' | base64 -d > "$1.tmp" && mv "$1.tmp" "$1"; fi`;
+        previewProc.command = wantMime || isDataImage
+            ? ["sh", "-c", `cliphist decode ${id} > "$1" && ${normalizeDataImage} && file --brief --mime-type "$1"`, "clipboard-preview", previewFile]
             : ["sh", "-c", `cliphist decode ${id} > "$1"`, "clipboard-preview", previewFile];
         previewProc.wantMime = wantMime;
         previewProc.forId = pendingId;
