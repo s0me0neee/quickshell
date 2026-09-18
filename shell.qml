@@ -14,7 +14,13 @@ import qs.services
 ShellRoot {
     Bar {}
 
-    Popups {}
+    // Notification surfaces are not needed until a notification is actually popping.
+    // Keeping the layer unmapped while idle avoids an extra window and its card tree.
+    LazyLoader {
+        active: Notifs.popupLive
+
+        Popups {}
+    }
 
     LazyLoader {
         active: Clipboard.live

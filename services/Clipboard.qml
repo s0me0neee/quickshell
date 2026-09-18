@@ -45,6 +45,9 @@ Singleton {
     }
 
     readonly property string previewFile: `${Quickshell.env("XDG_RUNTIME_DIR")}/quickshell-clipboard-preview`
+    // Never share the preview file with paste: an image decode still in flight must not
+    // be able to replace the data that is handed to wl-copy.
+    readonly property string pasteFile: `${Quickshell.env("XDG_RUNTIME_DIR")}/quickshell-clipboard-paste`
     readonly property var filteredEntries: {
         if (query.trim() === "")
             return entries;
@@ -114,10 +117,30 @@ Singleton {
     function inspect(entry: var): void {
         selectedId = entry.id;
         pendingId = entry.id;
+        // Do not leave the previous image visible while the new row is waiting for its
+        // debounced decode.
+        previewPath = "";
+        previewMime = "";
         inspectTimer.restart();
     }
 
+    function clearInspection(): void {
+        selectedId = "";
+        pendingId = "";
+        previewPath = "";
+        previewMime = "";
+        inspectTimer.stop();
+    }
+
     function runInspect(): void {
+        if (pendingId === "")
+            return;
+        // Process properties describe the active invocation. Updating them before it
+        // exits makes its result look like it belonged to the row now under the pointer.
+        if (previewProc.running) {
+            previewQueued = true;
+            return;
+        }
         const id = shellQuote(pendingId);
         const known = mimeById[pendingId];
         if (known !== undefined && !known.startsWith("image/")) {
@@ -135,19 +158,13 @@ Singleton {
             : ["sh", "-c", `cliphist decode ${id} > "$1"`, "clipboard-preview", previewFile];
         previewProc.wantMime = wantMime;
         previewProc.forId = pendingId;
-        if (previewProc.running) {
-            // The previous row is still decoding; it will pick this one up when it
-            // exits rather than fighting it for the same preview file
-            previewQueued = true;
-            return;
-        }
         previewProc.running = true;
     }
 
     function paste(entry: var): void {
         selectedId = entry.id;
         const id = shellQuote(entry.id);
-        pasteProc.command = ["sh", "-c", `cliphist decode ${id} > "$1" && mime=$(file --brief --mime-type "$1") && wl-copy --type "$mime" < "$1" && sleep 0.1 && wtype -M ctrl -k v -m ctrl`, "clipboard-paste", previewFile];
+        pasteProc.command = ["sh", "-c", `cliphist decode ${id} > "$1" && mime=$(file --brief --mime-type "$1") && wl-copy --type "$mime" < "$1" && sleep 0.1 && wtype -M ctrl -k v -m ctrl`, "clipboard-paste", pasteFile];
         pasteProc.running = true;
         closeHistory();
     }
@@ -163,11 +180,8 @@ Singleton {
     // the wipe itself only has to catch up
     function clearAll(): void {
         entries = [];
-        selectedId = "";
-        pendingId = "";
-        previewPath = "";
-        previewMime = "";
-        inspectTimer.stop();
+        clearInspection();
+        previewQueued = false;
         wipeProc.running = true;
     }
 
@@ -220,6 +234,11 @@ Singleton {
             onStreamFinished: {
                 if (previewProc.wantMime)
                     root.mimeById[previewProc.forId] = text.trim();
+                // A queued request is for the currently selected row. Keep the MIME
+                // cache from this completed decode, but never flash its result for a
+                // selection that has already changed.
+                if (previewProc.forId !== root.selectedId)
+                    return;
                 const mime = root.mimeById[previewProc.forId] ?? "";
                 root.previewMime = mime;
                 if (mime.startsWith("image/")) {

@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import qs.common
 import qs.components
 import qs.services
@@ -10,6 +11,24 @@ CircleButton {
 
     required property QtObject bar
 
+    property bool centerOpen: false
+    readonly property bool centerLive: centerOpen || centerLinger.running
+
+    onCenterOpenChanged: {
+        if (centerOpen)
+            centerLinger.stop();
+        else
+            centerLinger.restart();
+        if (centerLoader.item)
+            centerLoader.item.open = root.centerOpen;
+    }
+
+    Timer {
+        id: centerLinger
+
+        interval: Appearance.animNormal + 80
+    }
+
     readonly property bool dnd: Notifs.dnd
     readonly property bool unread: Notifs.count > 0 && !dnd
 
@@ -20,15 +39,45 @@ CircleButton {
     }
     fill: unread ? Theme.accent : Theme.tonal
     iconColor: unread ? Theme.primaryContainerText : Theme.secondaryContainerText
-    active: center.open
-    tooltip: center.open ? "" : dnd ? "Do not disturb" : unread ? `${Notifs.count} notification${Notifs.count === 1 ? "" : "s"}` : "No notifications"
-    onClicked: mouse => mouse.button === Qt.RightButton ? Notifs.toggleDnd() : center.toggle()
+    active: root.centerOpen
+    tooltip: root.centerOpen ? "" : dnd ? "Do not disturb" : unread ? `${Notifs.count} notification${Notifs.count === 1 ? "" : "s"}` : "No notifications"
+    onClicked: mouse => {
+        if (mouse.button === Qt.RightButton)
+            Notifs.toggleDnd();
+        else
+            root.centerOpen = !root.centerOpen;
+    }
 
-    NotifCenter {
-        id: center
+    LazyLoader {
+        id: centerLoader
 
-        target: root
-        bar: root.bar
+        active: root.centerLive
+
+        NotifCenter {
+            id: center
+
+            target: root
+            bar: root.bar
+        }
+    }
+
+    Connections {
+        target: centerLoader
+
+        // Created a moment after `active` flips; open it then, animation and all
+        function onItemChanged(): void {
+            if (centerLoader.item)
+                centerLoader.item.open = root.centerOpen;
+        }
+    }
+
+    Connections {
+        target: centerLoader.item
+
+        function onOpenChanged(): void {
+            if (centerLoader.item && root.centerOpen !== centerLoader.item.open)
+                root.centerOpen = centerLoader.item.open;
+        }
     }
 
     Rectangle {

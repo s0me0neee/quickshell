@@ -14,6 +14,10 @@ Singleton {
     // Newest first
     property list<NotifEntry> list: []
     readonly property list<NotifEntry> popups: list.filter(n => n.popup)
+    // Keep the popup layer alive for the short slide-out animation after the last
+    // notification stops popping. This lets shell.qml lazy-load the whole layer while
+    // preserving the existing exit animation.
+    readonly property bool popupLive: popups.length > 0 || popupLinger.running
     readonly property int count: list.length
     property alias dnd: props.dnd
 
@@ -45,6 +49,19 @@ Singleton {
     // fullscreen on the focused monitor — a video or a game shouldn't be covered.
     // They still land in the list, so nothing is lost.
     readonly property bool fullscreen: Hyprland.focusedMonitor?.activeWorkspace?.toplevels.values.some(t => t.lastIpcObject.fullscreen > 1) ?? false
+
+    Timer {
+        id: popupLinger
+
+        interval: 450
+    }
+
+    onPopupsChanged: {
+        if (popups.length > 0)
+            popupLinger.stop();
+        else
+            popupLinger.restart();
+    }
 
     function shouldPopUp(): bool {
         return !dnd && !fullscreen;

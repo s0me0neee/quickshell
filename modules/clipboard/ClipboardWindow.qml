@@ -26,12 +26,29 @@ PanelWindow {
 
     Component.onCompleted: progress = Qt.binding(() => Clipboard.open ? 1 : 0)
 
-    onSelectedChanged: {
+    function inspectSelected(): void {
         const entry = Clipboard.filteredEntries[selected];
         if (entry)
             Clipboard.inspect(entry);
+        else
+            Clipboard.clearInspection();
+    }
+
+    onSelectedChanged: {
+        inspectSelected();
         // Keyboard navigation has to be able to walk past the visible rows
         history.positionViewAtIndex(selected, ListView.Contain);
+    }
+
+    Connections {
+        target: Clipboard
+
+        // Loading the list does not change `selected` when it is already zero, so
+        // explicitly inspect the first fresh entry rather than waiting for a key press.
+        function onEntriesChanged(): void {
+            root.selected = 0;
+            root.inspectSelected();
+        }
     }
 
     function move(delta: int): void {
@@ -171,6 +188,7 @@ PanelWindow {
                             onTextChanged: {
                                 Clipboard.query = text;
                                 root.selected = 0;
+                                root.inspectSelected();
                             }
 
                             StyledText {
@@ -204,16 +222,6 @@ PanelWindow {
                             highlighted: index === root.selected
                             onActivated: Clipboard.paste(modelData)
                             onContainsMouseChanged: if (containsMouse) root.selected = index
-
-                            Rectangle {
-                                anchors.left: parent.left
-                                anchors.top: parent.top
-                                anchors.bottom: parent.bottom
-                                width: 3
-                                radius: width / 2
-                                visible: root.highlighted
-                                color: Theme.primary
-                            }
 
                             CircleButton {
                                 icon: Icons.close

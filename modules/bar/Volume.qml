@@ -12,6 +12,24 @@ CircleButton {
 
     required property QtObject bar
 
+    property bool panelOpen: false
+    readonly property bool panelLive: panelOpen || panelLinger.running
+
+    onPanelOpenChanged: {
+        if (panelOpen)
+            panelLinger.stop();
+        else
+            panelLinger.restart();
+        if (panelLoader.item)
+            panelLoader.item.open = root.panelOpen;
+    }
+
+    Timer {
+        id: panelLinger
+
+        interval: Appearance.animNormal + 80
+    }
+
     // Bluetooth wins over headphones: a wireless headset is both, and which radio the
     // sound is going out of is the thing worth knowing at a glance
     readonly property string glyph: {
@@ -28,15 +46,15 @@ CircleButton {
     icon: glyph
     iconSize: 16
     iconColor: Audio.muted ? Theme.critical : Theme.secondaryContainerText
-    active: popout.open
-    tooltip: popout.open ? "" : `Volume ${Math.round(Audio.volume * 100)}%${Audio.muted ? " · muted" : ""}`
+    active: root.panelOpen
+    tooltip: root.panelOpen ? "" : `Volume ${Math.round(Audio.volume * 100)}%${Audio.muted ? " · muted" : ""}`
     onClicked: mouse => {
         if (mouse.button === Qt.RightButton)
             Audio.toggleMute();
         else if (mouse.button === Qt.MiddleButton)
             Audio.openMixer();
         else
-            popout.toggle();
+            root.panelOpen = !root.panelOpen;
     }
     onWheel: event => Audio.step(event.angleDelta.y > 0 ? 0.02 : -0.02)
 
@@ -53,124 +71,149 @@ CircleButton {
         }
     }
 
-    Popout {
-        id: popout
+    LazyLoader {
+        id: panelLoader
 
-        target: root
-        bar: root.bar
-        contentWidth: 320
+        active: root.panelLive
 
-        RowLayout {
-            Layout.fillWidth: true
-            spacing: Appearance.spacing
+        Popout {
+            id: popout
 
-            StyledText {
+            target: root
+            bar: root.bar
+            contentWidth: 320
+
+            RowLayout {
                 Layout.fillWidth: true
-                text: "Sound"
-                font.pixelSize: Appearance.fontSize + 2
-                font.weight: Font.DemiBold
+                spacing: Appearance.spacing
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: "Sound"
+                    font.pixelSize: Appearance.fontSize + 2
+                    font.weight: Font.DemiBold
+                }
+
+                CircleButton {
+                    visible: Audio.hasMic
+                    icon: Audio.micMuted ? Icons.micMuted : Icons.mic
+                    fill: Audio.micMuted ? Theme.danger : Theme.tonal
+                    iconColor: Audio.micMuted ? Theme.errorContainerText : Theme.secondaryContainerText
+                    tooltip: Audio.micMuted ? "Unmute microphone" : "Mute microphone"
+                    onClicked: Audio.toggleMicMute()
+                }
+
+                CircleButton {
+                    icon: root.glyph
+                    fill: Audio.muted ? Theme.danger : Theme.tonal
+                    iconColor: Audio.muted ? Theme.errorContainerText : Theme.secondaryContainerText
+                    tooltip: Audio.muted ? "Unmute" : "Mute"
+                    onClicked: Audio.toggleMute()
+                }
             }
 
-            CircleButton {
+            BigSlider {
+                Layout.fillWidth: true
+                icon: root.glyph
+                muted: Audio.muted
+                value: Audio.volume
+                onMoved: value => Audio.setVolume(value)
+            }
+
+            Heading {
+                text: "Output"
+            }
+
+            Repeater {
+                model: Audio.sinks
+
+                ListItem {
+                    required property var modelData
+
+                    icon: modelData === Audio.sink ? Icons.radioOn : Icons.radioOff
+                    highlighted: modelData === Audio.sink
+                    label: modelData.description || modelData.nickname || modelData.name
+                    onActivated: Audio.setDefault(modelData)
+                }
+            }
+
+            // Microphone: the same controls, only shown when there is one
+            Divider {
+                visible: Audio.hasMic
+            }
+
+            Heading {
+                visible: Audio.hasMic
+                text: "Input"
+            }
+
+            BigSlider {
+                Layout.fillWidth: true
                 visible: Audio.hasMic
                 icon: Audio.micMuted ? Icons.micMuted : Icons.mic
-                fill: Audio.micMuted ? Theme.danger : Theme.tonal
-                iconColor: Audio.micMuted ? Theme.errorContainerText : Theme.secondaryContainerText
-                tooltip: Audio.micMuted ? "Unmute microphone" : "Mute microphone"
-                onClicked: Audio.toggleMicMute()
+                muted: Audio.micMuted
+                value: Audio.micVolume
+                onMoved: value => Audio.setMicVolume(value)
             }
 
-            CircleButton {
-                icon: root.glyph
-                fill: Audio.muted ? Theme.danger : Theme.tonal
-                iconColor: Audio.muted ? Theme.errorContainerText : Theme.secondaryContainerText
-                tooltip: Audio.muted ? "Unmute" : "Mute"
-                onClicked: Audio.toggleMute()
+            Repeater {
+                model: Audio.hasMic ? Audio.sources : []
+
+                ListItem {
+                    required property var modelData
+
+                    icon: modelData === Audio.source ? Icons.radioOn : Icons.radioOff
+                    highlighted: modelData === Audio.source
+                    label: modelData.description || modelData.nickname || modelData.name
+                    onActivated: Audio.setDefaultSource(modelData)
+                }
             }
-        }
 
-        BigSlider {
-            Layout.fillWidth: true
-            icon: root.glyph
-            muted: Audio.muted
-            value: Audio.volume
-            onMoved: value => Audio.setVolume(value)
-        }
+            // Whatever is making noise right now, one slider each
+            Divider {
+                visible: Audio.streams.length > 0
+            }
 
-        Heading {
-            text: "Output"
-        }
+            Heading {
+                visible: Audio.streams.length > 0
+                text: "Apps"
+            }
 
-        Repeater {
-            model: Audio.sinks
+            Repeater {
+                model: Audio.streams
+
+                StreamRow {}
+            }
+
+            Divider {}
 
             ListItem {
-                required property var modelData
-
-                icon: modelData === Audio.sink ? Icons.radioOn : Icons.radioOff
-                highlighted: modelData === Audio.sink
-                label: modelData.description || modelData.nickname || modelData.name
-                onActivated: Audio.setDefault(modelData)
+                icon: Icons.mixer
+                label: "Open mixer"
+                onActivated: {
+                    popout.open = false;
+                    Audio.openMixer();
+                }
             }
         }
+    }
 
-        // Microphone: the same controls, only shown when there is one
-        Divider {
-            visible: Audio.hasMic
+    Connections {
+        target: panelLoader
+
+        // Created a moment after `active` flips; open it then, animation and all
+        function onItemChanged(): void {
+            if (panelLoader.item)
+                panelLoader.item.open = root.panelOpen;
         }
+    }
 
-        Heading {
-            visible: Audio.hasMic
-            text: "Input"
-        }
+    Connections {
+        target: panelLoader.item
 
-        BigSlider {
-            Layout.fillWidth: true
-            visible: Audio.hasMic
-            icon: Audio.micMuted ? Icons.micMuted : Icons.mic
-            muted: Audio.micMuted
-            value: Audio.micVolume
-            onMoved: value => Audio.setMicVolume(value)
-        }
-
-        Repeater {
-            model: Audio.hasMic ? Audio.sources : []
-
-            ListItem {
-                required property var modelData
-
-                icon: modelData === Audio.source ? Icons.radioOn : Icons.radioOff
-                highlighted: modelData === Audio.source
-                label: modelData.description || modelData.nickname || modelData.name
-                onActivated: Audio.setDefaultSource(modelData)
-            }
-        }
-
-        // Whatever is making noise right now, one slider each
-        Divider {
-            visible: Audio.streams.length > 0
-        }
-
-        Heading {
-            visible: Audio.streams.length > 0
-            text: "Apps"
-        }
-
-        Repeater {
-            model: Audio.streams
-
-            StreamRow {}
-        }
-
-        Divider {}
-
-        ListItem {
-            icon: Icons.mixer
-            label: "Open mixer"
-            onActivated: {
-                popout.open = false;
-                Audio.openMixer();
-            }
+        function onOpenChanged(): void {
+            if (panelLoader.item && root.panelOpen !== panelLoader.item.open)
+                root.panelOpen = panelLoader.item.open;
         }
     }
 

@@ -165,34 +165,62 @@ PanelWindow {
                     x: Appearance.spacingLarge + 4
                     y: Appearance.spacingLarge
                     width: parent.width - (Appearance.spacingLarge + 4) * 2
-                    implicitHeight: [appearance, bar, media, units][root.page]?.implicitHeight ?? 0
+                    implicitHeight: [appearanceLoader, barLoader, mediaLoader, unitsLoader][root.page]?.item?.implicitHeight ?? 0
 
-                    AppearancePage {
-                        id: appearance
+                    Loader {
+                        id: appearanceLoader
 
                         width: parent.width
+                        active: root.page === 0
                         visible: root.page === 0
+
+                        sourceComponent: Component {
+                            AppearancePage {
+                                width: appearanceLoader.width
+                            }
+                        }
                     }
 
-                    BarPage {
-                        id: bar
+                    Loader {
+                        id: barLoader
 
                         width: parent.width
+                        active: root.page === 1
                         visible: root.page === 1
+
+                        sourceComponent: Component {
+                            BarPage {
+                                width: barLoader.width
+                            }
+                        }
                     }
 
-                    MediaPage {
-                        id: media
+                    Loader {
+                        id: mediaLoader
 
                         width: parent.width
+                        active: root.page === 2
                         visible: root.page === 2
+
+                        sourceComponent: Component {
+                            MediaPage {
+                                width: mediaLoader.width
+                            }
+                        }
                     }
 
-                    UnitsPage {
-                        id: units
+                    Loader {
+                        id: unitsLoader
 
                         width: parent.width
+                        active: root.page === 3
                         visible: root.page === 3
+
+                        sourceComponent: Component {
+                            UnitsPage {
+                                width: unitsLoader.width
+                            }
+                        }
                     }
                 }
             }

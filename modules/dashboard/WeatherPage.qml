@@ -12,6 +12,20 @@ ColumnLayout {
     // Every hour NOAA hands over, as many as fit in the row; twelve columns in 300px
     // would leave each one narrower than its own hour label
     readonly property var columns: (Weather.hourly ?? []).slice(0, 8)
+    // Whether this page is on screen. The dashboard drives it; the fetch follows
+    property bool active: false
+
+    onActiveChanged: {
+        if (active)
+            Weather.watch();
+        else
+            Weather.unwatch();
+    }
+
+    Component.onDestruction: {
+        if (active)
+            Weather.unwatch();
+    }
 
     function hourLabel(iso: string): string {
         return Settings.hour(new Date(iso));

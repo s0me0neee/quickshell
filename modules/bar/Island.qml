@@ -430,8 +430,14 @@ Rectangle {
         contentWidth: 520
         grabsFocus: false
 
-        MediaCard {
+        Loader {
             active: card.open
+
+            sourceComponent: Component {
+                MediaCard {
+                    active: card.open
+                }
+            }
         }
     }
 

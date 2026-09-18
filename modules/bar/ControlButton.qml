@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import Quickshell.Services.UPower
 import qs.common
 import qs.components
@@ -11,6 +12,24 @@ CircleButton {
     id: root
 
     required property QtObject bar
+
+    property bool centerOpen: false
+    readonly property bool centerLive: centerOpen || centerLinger.running
+
+    onCenterOpenChanged: {
+        if (centerOpen)
+            centerLinger.stop();
+        else
+            centerLinger.restart();
+        if (centerLoader.item)
+            centerLoader.item.open = root.centerOpen;
+    }
+
+    Timer {
+        id: centerLinger
+
+        interval: Appearance.animNormal + 80
+    }
 
     visible: Settings.data.showControlCenter
     icon: Icons.tune
@@ -29,9 +48,9 @@ CircleButton {
             return Theme.tertiaryContainerText;
         return Theme.secondaryContainerText;
     }
-    active: center.open
-    tooltip: center.open ? "" : Brightness.available ? `${Power.profileName(Power.profile)} · brightness ${Brightness.percent}%` : Power.profileName(Power.profile)
-    onClicked: center.toggle()
+    active: root.centerOpen
+    tooltip: root.centerOpen ? "" : Brightness.available ? `${Power.profileName(Power.profile)} · brightness ${Brightness.percent}%` : Power.profileName(Power.profile)
+    onClicked: root.centerOpen = !root.centerOpen
     onWheel: event => Brightness.step(event.angleDelta.y > 0 ? 0.05 : -0.05)
 
     RingGauge {
@@ -49,10 +68,35 @@ CircleButton {
         }
     }
 
-    ControlCenter {
-        id: center
+    LazyLoader {
+        id: centerLoader
 
-        target: root
-        bar: root.bar
+        active: root.centerLive
+
+        ControlCenter {
+            id: center
+
+            target: root
+            bar: root.bar
+        }
+    }
+
+    Connections {
+        target: centerLoader
+
+        // Created a moment after `active` flips; open it then, animation and all
+        function onItemChanged(): void {
+            if (centerLoader.item)
+                centerLoader.item.open = root.centerOpen;
+        }
+    }
+
+    Connections {
+        target: centerLoader.item
+
+        function onOpenChanged(): void {
+            if (centerLoader.item && root.centerOpen !== centerLoader.item.open)
+                root.centerOpen = centerLoader.item.open;
+        }
     }
 }

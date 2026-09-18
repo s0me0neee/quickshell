@@ -24,6 +24,24 @@ Pill {
 
             required property SystemTrayItem modelData
 
+            property bool menuOpen: false
+            readonly property bool menuLive: menuOpen || menuLinger.running
+
+            onMenuOpenChanged: {
+                if (menuOpen)
+                    menuLinger.stop();
+                else
+                    menuLinger.restart();
+                if (menuLoader.item)
+                    menuLoader.item.open = item.menuOpen;
+            }
+
+            Timer {
+                id: menuLinger
+
+                interval: Appearance.animNormal + 80
+            }
+
             implicitWidth: Appearance.circleSize
             implicitHeight: Appearance.circleSize
             acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
@@ -36,14 +54,14 @@ Pill {
                 else if (event.button === Qt.MiddleButton)
                     modelData.secondaryActivate();
                 else if (modelData.hasMenu)
-                    menu.toggle();
+                    item.menuOpen = !item.menuOpen;
             }
             onWheel: event => modelData.scroll(event.angleDelta.y, false)
 
             Rectangle {
                 anchors.fill: parent
                 radius: width / 2
-                color: item.containsMouse || menu.open ? Theme.tonal : "transparent"
+                color: item.containsMouse || item.menuOpen ? Theme.tonal : "transparent"
                 scale: item.pressed ? 0.86 : 1
 
                 Behavior on color {
@@ -78,15 +96,40 @@ Pill {
             Tooltip {
                 target: item
                 text: item.modelData.tooltipTitle || item.modelData.title || item.modelData.id
-                show: item.containsMouse && !menu.open
+                show: item.containsMouse && !item.menuOpen
             }
 
-            TrayMenu {
-                id: menu
+            LazyLoader {
+                id: menuLoader
 
-                target: item
-                bar: root.bar
-                handle: item.modelData.menu
+                active: item.menuLive
+
+                TrayMenu {
+                    id: menu
+
+                    target: item
+                    bar: root.bar
+                    handle: item.modelData.menu
+                }
+            }
+
+            Connections {
+                target: menuLoader
+
+                // Created a moment after `active` flips; open it then, animation and all
+                function onItemChanged(): void {
+                    if (menuLoader.item)
+                        menuLoader.item.open = item.menuOpen;
+                }
+            }
+
+            Connections {
+                target: menuLoader.item
+
+                function onOpenChanged(): void {
+                    if (menuLoader.item && item.menuOpen !== menuLoader.item.open)
+                        item.menuOpen = menuLoader.item.open;
+                }
             }
         }
     }

@@ -20,6 +20,12 @@ Singleton {
     property string error: ""
     property bool loading: false
 
+    // How many weather pages are on screen. The forecast is only useful while one is,
+    // so nothing fetches — and no timer ticks — when the dashboard is closed. Counting
+    // readers rather than a single flag keeps two screens from turning each other off.
+    property int readers: 0
+    readonly property bool active: readers > 0
+
     readonly property bool available: data?.ok ?? false
     readonly property var now: data?.now ?? null
     readonly property var hourly: data?.hourly ?? []
@@ -35,6 +41,16 @@ Singleton {
     // NOAA regenerates hourly, so anything tighter is asking to be throttled
     readonly property int refreshInterval: 20 * 60 * 1000
 
+    function watch(): void {
+        readers += 1;
+        if (readers === 1)
+            refresh();
+    }
+
+    function unwatch(): void {
+        readers = Math.max(0, readers - 1);
+    }
+
     function refresh(): void {
         if (!proc.running)
             proc.running = true;
@@ -48,11 +64,9 @@ Singleton {
         root.error = "";
     }
 
-    Component.onCompleted: refresh()
-
     Timer {
         interval: root.refreshInterval
-        running: true
+        running: root.active
         repeat: true
         onTriggered: root.refresh()
     }

@@ -7,10 +7,8 @@ import qs.services
 // Hangs under the clock, where you already look for the date.
 //
 // One page at a time, switched by the strip at the top — a dashboard that showed all
-// three at once would be a wall. Pages are kept alive once visited rather than rebuilt
-// on every switch, so flicking between them doesn't re-run the calendar's layout or
-// lose the month you had paged to; the System page still stops reading /proc the moment
-// it is not the one on show.
+// three at once would be a wall. Pages are created on first selection and kept alive for
+// the rest of this open panel, so switching tabs does not rebuild what you already saw.
 Popout {
     id: root
 
@@ -18,6 +16,9 @@ Popout {
     property date today: new Date()
     // Where it opens; flicking between tabs moves it, and closing puts it back
     property int page: Settings.data.dashboardTab
+    property bool calendarVisited: false
+    property bool weatherVisited: false
+    property bool systemVisited: false
 
     contentWidth: 320
 
@@ -29,10 +30,22 @@ Popout {
 
         function onVisibleChanged(): void {
             if (!root.visible) {
-                calendar.toToday();
+                calendarLoader.item?.toToday();
+                root.calendarVisited = false;
+                root.weatherVisited = false;
+                root.systemVisited = false;
                 root.page = Settings.data.dashboardTab;
             }
         }
+    }
+
+    onPageChanged: {
+        if (page === 0)
+            calendarVisited = true;
+        else if (page === 1)
+            weatherVisited = true;
+        else if (page === 2)
+            systemVisited = true;
     }
 
     TabStrip {
@@ -66,32 +79,54 @@ Popout {
     Item {
         Layout.fillWidth: true
         Layout.topMargin: Appearance.spacingSmall
-        implicitHeight: [calendar, weather, system][root.page]?.implicitHeight ?? 0
+        implicitHeight: [calendarLoader, weatherLoader, systemLoader][root.page]?.item?.implicitHeight ?? 0
         clip: true
 
-        CalendarPage {
-            id: calendar
+        Loader {
+            id: calendarLoader
 
             width: parent.width
-            today: root.today
+            active: root.visible && (root.page === 0 || root.calendarVisited)
             visible: root.page === 0
+
+            sourceComponent: Component {
+                CalendarPage {
+                    width: calendarLoader.width
+                    today: root.today
+                }
+            }
         }
 
-        WeatherPage {
-            id: weather
+        Loader {
+            id: weatherLoader
 
             width: parent.width
+            active: root.visible && (root.page === 1 || root.weatherVisited)
             visible: root.page === 1
+
+            sourceComponent: Component {
+                WeatherPage {
+                    width: weatherLoader.width
+                    active: root.page === 1 && root.visible
+                }
+            }
         }
 
-        SystemPage {
-            id: system
+        Loader {
+            id: systemLoader
 
             width: parent.width
-            // Only while it is both the page on show and on screen at all: a closed
-            // dashboard must not leave a timer reading /proc every two seconds
-            active: root.page === 2 && root.visible
+            active: root.visible && (root.page === 2 || root.systemVisited)
             visible: root.page === 2
+
+            sourceComponent: Component {
+                SystemPage {
+                    width: systemLoader.width
+                    // Only while it is both the page on show and on screen at all: a
+                    // closed dashboard must not leave a timer reading /proc.
+                    active: root.page === 2 && root.visible
+                }
+            }
         }
     }
 }
