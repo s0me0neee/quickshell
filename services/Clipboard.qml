@@ -90,6 +90,11 @@ Singleton {
                 });
                 continue;
             }
+            // Rich clipboard records are HTML (usually a <meta>/<img> payload)
+            // with no useful plain-text preview. Keep the regular text record and
+            // omit these instead of trying to render or decode them.
+            if (/^\s*</.test(rawPreview))
+                continue;
             next.push({
                 id: match[1],
                 preview: rawPreview

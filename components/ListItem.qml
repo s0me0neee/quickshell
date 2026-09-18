@@ -9,7 +9,6 @@ MouseArea {
     property string icon
     property string label
     property string subtitle
-    property int textFormat: Text.AutoText
     property bool highlighted
     default property alias trailing: trailingRow.data
 
@@ -56,7 +55,6 @@ MouseArea {
             StyledText {
                 Layout.fillWidth: true
                 text: root.label
-                textFormat: root.textFormat
                 color: root.highlighted ? Theme.surfaceText : Theme.surfaceVariantText
             }
 
@@ -64,7 +62,6 @@ MouseArea {
                 Layout.fillWidth: true
                 visible: root.subtitle !== ""
                 text: root.subtitle
-                textFormat: root.textFormat
                 color: root.highlighted ? Theme.primary : Theme.textDim
                 font.pixelSize: Appearance.fontSizeSmall
             }
