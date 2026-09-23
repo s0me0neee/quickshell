@@ -141,10 +141,24 @@ would accept.
   the vacated band against the settled frame and prints how far off each frame is.
   A three-line `IpcHandler` in Dashboard.qml made runs repeatable; removed again
 
+### 11. The island hub
+
+**Decided:** tabs, one page at a time (Clavis's hub, not its all-at-once dashboard); the
+whole island is one target; the weather page gets NOAA's 7-day forecast.
+
+- [x] Hover anywhere on the island opens the media card; right-click anywhere opens the hub
+- [x] Hub is 720 wide under the island: Media, Weather, Calendar, System
+- [x] Media: the media card, taller, with the album
+- [x] Weather: now + 12 hours, then 7 days with low-high bars on one shared scale.
+      `weather/` fetches NOAA's daily forecast too; a failure there only empties the week
+- [x] Calendar: big clock and date beside the month; System: three dials beside the details
+- [x] `hubTab` setting by name ("calendar" by default, which is what the old index 0 meant)
+
 ## Later
 
-- Make it look really nice
-- The session menu's LazyLoader has the same binding-loop shape the settings one had
-  (`active` reading `item.progress`). It has not warned yet, but it is the same bug
+- Make it look really nice — now itemised as PLAN.md's **Visual gaps** table, in the
+  order worth doing. Ripple/state layer is first and cheapest
+- Phases 6–9 (lyrics, desktop layer, sidebar drawer, lock screen) are in PLAN.md as of
+  2026-09-22, each with a budget it has to meet or be reverted
 - Right-click a control-center tile to open its detail panel (Clavis does this)
 - VPN tile — there is a ProtonVPN profile in NetworkManager already
