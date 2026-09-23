@@ -112,8 +112,9 @@ Singleton {
             property bool showControlCenter: true
             property bool showTray: true
             property bool twelveHour: false
-            // Which dashboard tab the clock opens on: 0 calendar, 1 weather, 2 system
-            property int dashboardTab: 0
+            // Which hub tab a right-click on the island opens: media, weather, calendar
+            // or system. A name, not an index, so adding a tab never re-points it
+            property string hubTab: "calendar"
 
             // --- media and sound ---
             property bool visualiser: true

@@ -25,7 +25,8 @@ PanelWindow {
     // Horizontal center of the target in screen coordinates. Reading x/width of the target
     // and its parents makes this re-evaluate whenever the bar layout moves them.
     readonly property real anchorX: {
-        if (!bar || !target)
+        // Hidden popouts would otherwise follow every frame of the island's morph
+        if (!bar || !target || !visible)
             return 0;
         target.x + target.width + (target.parent?.x ?? 0) + (target.parent?.parent?.x ?? 0) + bar.width;
         return bar.margins.left + target.mapToItem(bar.contentItem, target.width / 2, 0).x;

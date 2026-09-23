@@ -45,6 +45,7 @@ Singleton {
     readonly property bool playing: active?.isPlaying ?? false
     readonly property string title: active?.trackTitle ?? ""
     readonly property string artist: active?.trackArtist ?? ""
+    readonly property string album: active?.trackAlbum ?? ""
     readonly property string artUrl: active?.trackArtUrl ?? ""
     readonly property bool canGoNext: active?.canGoNext ?? false
     readonly property bool canGoPrevious: active?.canGoPrevious ?? false

@@ -1,8 +1,10 @@
 import QtQuick
+import QtQuick.Shapes
 import qs.common
 
-// Circular progress ring, 0..1. Repaints only when the value or colors change.
-Canvas {
+// Circular progress ring, 0..1. A Shape rather than a Canvas: an animated value only
+// updates two arcs on the GPU instead of re-rasterising and re-uploading a texture per frame.
+Shape {
     id: root
 
     property real value: 0
@@ -10,31 +12,41 @@ Canvas {
     property color color: Theme.primary
     property color trackColor: Qt.alpha(Theme.surfaceText, 0.15)
 
-    onValueChanged: requestPaint()
-    onColorChanged: requestPaint()
-    onTrackColorChanged: requestPaint()
-    onWidthChanged: requestPaint()
-    onHeightChanged: requestPaint()
-    onLineWidthChanged: requestPaint()
+    readonly property real radius: Math.max(0, Math.min(width, height) / 2 - lineWidth / 2)
+    readonly property real sweep: Math.max(0, Math.min(1, value)) * 360
 
-    onPaint: {
-        const ctx = getContext("2d");
-        ctx.reset();
-        const r = Math.min(width, height) / 2 - lineWidth / 2;
-        ctx.lineWidth = lineWidth;
-        ctx.lineCap = "round";
+    preferredRendererType: Shape.CurveRenderer
 
-        ctx.strokeStyle = Theme.css(trackColor);
-        ctx.beginPath();
-        ctx.arc(width / 2, height / 2, r, 0, 2 * Math.PI);
-        ctx.stroke();
+    ShapePath {
+        fillColor: "transparent"
+        strokeColor: root.trackColor
+        strokeWidth: root.lineWidth
+        capStyle: ShapePath.RoundCap
 
-        const v = Math.max(0, Math.min(1, value));
-        if (v > 0) {
-            ctx.strokeStyle = Theme.css(root.color);
-            ctx.beginPath();
-            ctx.arc(width / 2, height / 2, r, -Math.PI / 2, -Math.PI / 2 + v * 2 * Math.PI);
-            ctx.stroke();
+        PathAngleArc {
+            centerX: root.width / 2
+            centerY: root.height / 2
+            radiusX: root.radius
+            radiusY: root.radius
+            startAngle: 0
+            sweepAngle: 360
+        }
+    }
+
+    ShapePath {
+        fillColor: "transparent"
+        // Transparent rather than hidden at 0, so the round cap never draws a lone dot
+        strokeColor: root.sweep > 0 ? root.color : "transparent"
+        strokeWidth: root.lineWidth
+        capStyle: ShapePath.RoundCap
+
+        PathAngleArc {
+            centerX: root.width / 2
+            centerY: root.height / 2
+            radiusX: root.radius
+            radiusY: root.radius
+            startAngle: -90
+            sweepAngle: root.sweep
         }
     }
 }

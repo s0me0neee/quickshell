@@ -32,44 +32,78 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
         Layout.topMargin: Appearance.spacingSmall
-        spacing: Appearance.spacing
+        spacing: Appearance.spacingLarge * 2
 
         // The ring already says the percentage, so the line under it says the thing the
         // ring can't: how deep the queue is, which is what tells a busy machine from a
         // wedged one
-        Dial {
-            icon: Icons.cpu
-            label: "CPU"
-            value: SysStats.cpu
-            detail: `load ${SysStats.loadAverage.toFixed(2)}`
+        RowLayout {
+            Layout.preferredWidth: 380
+            Layout.alignment: Qt.AlignTop
+            spacing: Appearance.spacing
+
+            Dial {
+                icon: Icons.cpu
+                label: "CPU"
+                value: SysStats.cpu
+                detail: `load ${SysStats.loadAverage.toFixed(2)}`
+            }
+
+            Dial {
+                icon: Icons.memory
+                label: "Memory"
+                value: SysStats.memory
+                detail: SysStats.memoryText
+            }
+
+            Dial {
+                visible: Power.hasBattery
+                icon: Icons.pick(Icons.battery, Power.percentage)
+                label: "Battery"
+                value: Power.percentage
+                // Charge is good when high, so it takes the plain accent rather than the
+                // warning tones the load dials use
+                tone: Power.percentage < 0.15 ? Theme.critical : Theme.primary
+                detail: Power.status
+            }
         }
 
-        Dial {
-            icon: Icons.memory
-            label: "Memory"
-            value: SysStats.memory
-            detail: SysStats.memoryText
+        ColumnLayout {
+            Layout.fillWidth: true
+            Layout.alignment: Qt.AlignVCenter
+            spacing: Appearance.spacing
+
+            Line {
+                label: "Uptime"
+                value: SysStats.uptimeText
+            }
+
+            Line {
+                label: "Load average"
+                value: SysStats.loadAverage.toFixed(2)
+            }
+
+            Line {
+                label: "Memory"
+                value: SysStats.memoryText
+            }
+
+            Line {
+                label: "Power profile"
+                value: Power.profileName(Power.profile)
+            }
+
+            Line {
+                label: "Network"
+                value: Network.connected ? Network.name : "Not connected"
+            }
+
+            Line {
+                label: "Address"
+                visible: Network.ipAddress !== ""
+                value: Network.ipAddress
+            }
         }
-    }
-
-    Divider {
-        Layout.topMargin: Appearance.spacingSmall
-    }
-
-    Line {
-        label: "Uptime"
-        value: SysStats.uptimeText
-    }
-
-    Line {
-        label: "Battery"
-        visible: Power.hasBattery
-        value: `${Math.round(Power.percentage * 100)}% · ${Power.status}`
-    }
-
-    Line {
-        label: "Network"
-        value: Network.connected ? `${Network.name}${Network.ipAddress ? ` · ${Network.ipAddress}` : ""}` : "Not connected"
     }
 
     // A ring with the figure in the middle, the way the bar draws volume and charge.
@@ -85,7 +119,7 @@ ColumnLayout {
         property string detail
         property real value: 0
 
-        readonly property color tone: value > 0.9 ? Theme.critical : value > 0.7 ? Theme.tertiary : Theme.primary
+        property color tone: value > 0.9 ? Theme.critical : value > 0.7 ? Theme.tertiary : Theme.primary
 
         Layout.fillWidth: true
         implicitHeight: stack.implicitHeight

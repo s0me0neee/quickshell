@@ -29,6 +29,9 @@ Singleton {
     readonly property bool available: data?.ok ?? false
     readonly property var now: data?.now ?? null
     readonly property var hourly: data?.hourly ?? []
+    // One entry per date: { date, high, low, condition, short, precipitation }. High or
+    // low is null where NOAA's week starts or ends on half a day
+    readonly property var daily: data?.daily ?? []
     readonly property string city: data?.city ?? ""
     readonly property int temperature: Math.round(now?.temperature ?? 0)
     readonly property string unit: now?.unit ?? "F"

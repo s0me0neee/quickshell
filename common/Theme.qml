@@ -42,7 +42,7 @@ Singleton {
     // Glass: how see-through surfaces are. 0.4 matches the old waybar.
     readonly property real glassOpacity: Settings.data.glassOpacity
     readonly property color glass: Qt.alpha(surface, glassOpacity)
-    readonly property color glassHover: Qt.alpha(surfaceContainerHighest, glassOpacity + 0.2)
+    readonly property color glassHover: Qt.alpha(surfaceContainerHighest, Math.min(1, glassOpacity + 0.2))
     // Faint 1px edge that makes glass read as glass
     readonly property color glassEdge: Qt.alpha(surfaceText, 0.08)
     // Tinted fills for buttons and chips: wallpaper colors, still see-through

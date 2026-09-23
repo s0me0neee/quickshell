@@ -12,6 +12,9 @@ Item {
 
     // True while the card is on screen; position is only refreshed then
     property bool active: false
+    // The hub shows the same card, taller and with the album
+    property int minHeight: 150
+    property bool detailed: false
     readonly property MprisPlayer player: Media.active
     readonly property real length: player?.length ?? 0
     readonly property real position: player?.position ?? 0
@@ -24,7 +27,7 @@ Item {
     implicitWidth: 520
     // Grows with its contents: an artist line or a wrapped row of player chips would
     // otherwise push the transport controls off the bottom edge, which the panel clips
-    implicitHeight: Math.max(150, info.implicitHeight)
+    implicitHeight: Math.max(root.minHeight, info.implicitHeight)
 
     // MPRIS doesn't push position updates: refresh once a second, only while shown and playing
     Timer {
@@ -87,6 +90,15 @@ Item {
                 text: Media.artist
                 elide: Text.ElideRight
                 color: Theme.surfaceVariantText
+            }
+
+            StyledText {
+                Layout.fillWidth: true
+                visible: root.detailed && text !== ""
+                text: Media.album
+                elide: Text.ElideRight
+                color: Theme.textDim
+                font.pixelSize: Appearance.fontSizeSmall
             }
 
             // One chip per player, on its own row so a second player can never squeeze

@@ -184,10 +184,20 @@ ColumnLayout {
         }
 
         MouseArea {
+            // Scroll gathered up and spent a month per wheel notch (120). A touchpad sends
+            // a swipe as dozens of small events, and a month apiece flew through the year
+            property real pending: 0
+
             anchors.fill: parent
             acceptedButtons: Qt.MiddleButton
             onClicked: root.toToday()
-            onWheel: event => root.shift(event.angleDelta.y > 0 ? -1 : 1)
+            onWheel: event => {
+                pending += event.angleDelta.y;
+                while (Math.abs(pending) >= 120) {
+                    root.shift(pending > 0 ? -1 : 1);
+                    pending -= Math.sign(pending) * 120;
+                }
+            }
         }
     }
 }

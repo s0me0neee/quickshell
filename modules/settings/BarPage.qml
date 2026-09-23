@@ -93,14 +93,16 @@ ColumnLayout {
         }
 
         SettingRow {
-            label: "Dashboard opens on"
-            description: "Which tab the clock's panel shows first."
+            label: "Hub opens on"
+            description: "Which tab a right-click on the island shows first."
 
             Choice {
-                options: ["Calendar", "Weather", "System"]
-                current: Settings.data.dashboardTab
+                readonly property var keys: ["media", "weather", "calendar", "system"]
+
+                options: ["Media", "Weather", "Calendar", "System"]
+                current: Math.max(0, keys.indexOf(Settings.data.hubTab))
                 onPicked: index => {
-                    Settings.data.dashboardTab = index;
+                    Settings.data.hubTab = keys[index];
                     Settings.save();
                 }
             }

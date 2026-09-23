@@ -29,11 +29,12 @@ common/              Singletons, no UI and no system calls
 components/          reusable widgets (Pill, CircleButton, Popout, Icon, ...)
 services/            Singletons that talk to the system
 modules/bar/         the bar and everything in it
-modules/dashboard/   the clock's calendar / weather / system popout
+modules/dashboard/   the island's hub (media / weather / calendar / system) and the media card
 modules/notifications/  popups + notification list
 modules/session/     the full-screen session menu
 modules/settings/    the settings window
 modules/clipboard/   the clipboard history window
+modules/polkit/      the polkit password dialog
 dev/                 off-machine preview (stubs for Quickshell, mock data)
 matugen/             matugen colour template
 hypr/                Hyprland snippet (blur rules, autostart, restart bind)
@@ -100,7 +101,7 @@ are needed.
   `hypr/quickshell.conf` blur/alpha rules, restart the shell (`qs kill; qs -d -n`).
 - **Layer namespaces must start with `qs-`** for the blur `layerrule` to match
   (`WlrLayershell.namespace: "qs-bar"`, `"qs-popout"`, `"qs-session"`,
-  `"qs-settings"`, `"qs-clipboard"`, `"qs-notifications"`, `"qs-idle"`).
+  `"qs-settings"`, `"qs-clipboard"`, `"qs-notifications"`, `"qs-idle"`, `"qs-polkit"`).
 - **A `Behavior` never runs on a binding's first evaluation.** To animate an item's
   *initial* state, declare the property as a plain `0` and bind it in
   `Component.onCompleted` with `Qt.binding(...)` (`SessionMenu.qml`, `Popups.qml`).
@@ -125,6 +126,16 @@ are needed.
   `GlobalShortcut { appid: "qs"; name: "clipboard" }`; Quickshell's default appid is
   `quickshell`, not `qs`. `services/Clipboard.qml` registers the one for `SUPER+V`, and
   PLAN.md's `qs:launcher` / `qs:calc` binds will each need the same.
+- **Only one polkit agent can register per session.** `services/Polkit.qml` silently stays
+  unregistered while polkit-gnome runs; stop it before testing the dialog.
+- **The panel runs at 260 Hz,** so every animation draws ~260 frames/s and per-frame work
+  costs 4x what it would at 60 Hz. Prefer `Shape` over `Canvas` for anything animated
+  (`RingGauge`), and keep per-frame bindings out of repeated delegates (`Workspaces.covered`).
+- **Measuring the running shell:** after `qs -d` the process is named `qs` or
+  `quickshell` depending on how it was launched — take the PID from `qs list`, not
+  `pgrep`. `qs kill` can leave the process alive hosting the next instance; `kill` the PID
+  for a clean start. `qs log` output lags the process, so don't count frames from it —
+  sample `/proc/<pid>/stat` instead, or attach `qmlprofiler` via `qs -d -n --debug 3768`.
 - **Do not fade notification cards to opacity 0.** Hyprland's `ignore_alpha 0.1` rule
   skips sub-0.1-alpha surfaces, so a fading card smears the blur region every frame.
   Slide them instead (`Popups.qml`). The notifications window is also kept at a **fixed**

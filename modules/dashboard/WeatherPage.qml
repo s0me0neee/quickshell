@@ -4,15 +4,26 @@ import qs.common
 import qs.components
 import qs.services
 
-// Now, and the next few hours. Not a weather app: one glyph, one number, and enough of
-// the afternoon to know whether to take a coat.
+// Now, the next twelve hours, and the week. Each day's bar sits on one scale shared by
+// the whole week, so a warm day reads as warm next to the others, not just on its own.
 ColumnLayout {
     id: root
 
-    // Every hour NOAA hands over, as many as fit in the row; twelve columns in 300px
-    // would leave each one narrower than its own hour label
-    readonly property var columns: (Weather.hourly ?? []).slice(0, 8)
-    // Whether this page is on screen. The dashboard drives it; the fetch follows
+    readonly property var columns: (Weather.hourly ?? []).slice(0, 12)
+    readonly property var days: Weather.daily ?? []
+    // The week's coldest low and warmest high, the two ends every bar is placed between
+    // A loop, not flatMap: the list arrives as a QML sequence, which has no flatMap
+    readonly property var temps: {
+        const out = [];
+        for (const d of days)
+            for (const t of [d.high, d.low])
+                if (t !== null && t !== undefined)
+                    out.push(t);
+        return out;
+    }
+    readonly property real weekMin: temps.length > 0 ? Math.min(...temps) : 0
+    readonly property real weekMax: temps.length > 0 ? Math.max(...temps) : 1
+    // Whether this page is on screen. The hub drives it; the fetch follows
     property bool active: false
 
     onActiveChanged: {
@@ -31,40 +42,58 @@ ColumnLayout {
         return Settings.hour(new Date(iso));
     }
 
-    spacing: Appearance.spacing
+    // "2026-09-22" is a date where the forecast is, so it is built as a local date: a
+    // Date parsed from the string alone is UTC midnight, the day before west of Greenwich
+    function dayLabel(date: string): string {
+        const [y, m, d] = date.split("-").map(Number);
+        const day = new Date(y, m - 1, d);
+        if (day.toDateString() === new Date().toDateString())
+            return "Today";
+        return Qt.locale().dayName(day.getDay(), Locale.ShortFormat);
+    }
 
-    // --- now ---
+    function degrees(fahrenheit: var): string {
+        return fahrenheit === null || fahrenheit === undefined ? "–" : `${Math.round(Settings.temperature(fahrenheit))}°`;
+    }
+
+    spacing: Appearance.spacingLarge
+
+    // --- now, and the next twelve hours ---
 
     RowLayout {
         Layout.fillWidth: true
         visible: Weather.available
-        spacing: Appearance.spacingLarge
-
-        Icon {
-            text: Icons.weather(Weather.condition)
-            size: 46
-            color: Theme.primary
-        }
+        spacing: Appearance.spacingLarge * 2
 
         ColumnLayout {
-            Layout.fillWidth: true
-            spacing: 0
+            Layout.preferredWidth: 220
+            Layout.alignment: Qt.AlignTop
+            spacing: 2
 
             RowLayout {
-                spacing: 2
+                spacing: Appearance.spacingLarge
 
-                StyledText {
-                    text: Math.round(Settings.temperature(Weather.now?.temperature ?? 0))
-                    font.pixelSize: 34
-                    font.weight: Font.Light
+                Icon {
+                    text: Icons.weather(Weather.condition)
+                    size: 52
+                    color: Theme.primary
                 }
 
-                StyledText {
-                    Layout.alignment: Qt.AlignTop
-                    Layout.topMargin: 6
-                    text: `°${Settings.temperatureUnit}`
-                    color: Theme.surfaceVariantText
-                    font.pixelSize: Appearance.fontSize
+                RowLayout {
+                    spacing: 2
+
+                    StyledText {
+                        text: Math.round(Settings.temperature(Weather.now?.temperature ?? 0))
+                        font.pixelSize: 44
+                        font.weight: Font.Light
+                    }
+
+                    StyledText {
+                        Layout.alignment: Qt.AlignTop
+                        Layout.topMargin: 8
+                        text: `°${Settings.temperatureUnit}`
+                        color: Theme.surfaceVariantText
+                    }
                 }
             }
 
@@ -72,8 +101,6 @@ ColumnLayout {
                 Layout.fillWidth: true
                 text: Weather.summary
                 elide: Text.ElideRight
-                color: Theme.surfaceText
-                font.pixelSize: Appearance.fontSizeSmall
             }
 
             StyledText {
@@ -83,88 +110,175 @@ ColumnLayout {
                 color: Theme.textDim
                 font.pixelSize: Appearance.fontSizeSmall
             }
-        }
-    }
 
-    // Wind and damp, the two numbers that change what you wear
-    RowLayout {
-        Layout.fillWidth: true
-        Layout.topMargin: 2
-        visible: Weather.available
-        spacing: Appearance.spacingLarge
+            // Wind and damp, the two numbers that change what you wear
+            RowLayout {
+                Layout.topMargin: Appearance.spacing
+                spacing: Appearance.spacingLarge
 
-        Detail {
-            icon: Icons.humidity
-            label: `${Math.round(Weather.now?.humidity ?? 0)}%`
-        }
+                Detail {
+                    icon: Icons.humidity
+                    label: `${Math.round(Weather.now?.humidity ?? 0)}%`
+                }
 
-        Detail {
-            icon: Icons.rainy
-            label: `${Math.round(Weather.now?.precipitation ?? 0)}%`
-        }
+                Detail {
+                    icon: Icons.rainy
+                    label: `${Math.round(Weather.now?.precipitation ?? 0)}%`
+                }
 
-        Detail {
-            icon: Icons.windy
-            label: `${Math.round(Settings.wind(Weather.now?.wind ?? 0))} ${Settings.windUnit} ${Weather.now?.windDirection ?? ""}`
+                Detail {
+                    icon: Icons.windy
+                    label: `${Math.round(Settings.wind(Weather.now?.wind ?? 0))} ${Settings.windUnit} ${Weather.now?.windDirection ?? ""}`
+                }
+            }
         }
 
-        Item {
+        RowLayout {
             Layout.fillWidth: true
+            Layout.alignment: Qt.AlignVCenter
+            spacing: 0
+
+            Repeater {
+                model: root.columns
+
+                // A plain Item, not a ColumnLayout: a layout nested straight into another
+                // layout sizes itself from its contents and ignores the width it was given
+                Item {
+                    id: column
+
+                    required property var modelData
+
+                    Layout.fillWidth: true
+                    implicitHeight: stack.implicitHeight
+
+                    ColumnLayout {
+                        id: stack
+
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        spacing: 4
+
+                        StyledText {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: root.hourLabel(column.modelData.time)
+                            color: Theme.surfaceVariantText
+                            font.pixelSize: Appearance.fontSizeSmall - 1
+                        }
+
+                        Icon {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: Icons.weather(column.modelData.condition)
+                            size: 18
+                            color: Theme.surfaceVariantText
+                        }
+
+                        StyledText {
+                            Layout.alignment: Qt.AlignHCenter
+                            text: root.degrees(column.modelData.temperature)
+                            font.pixelSize: Appearance.fontSizeSmall
+                            font.weight: Font.DemiBold
+                        }
+
+                        StyledText {
+                            Layout.alignment: Qt.AlignHCenter
+                            // Blank rather than "0%": most hours have no chance at all
+                            text: column.modelData.precipitation >= 20 ? `${Math.round(column.modelData.precipitation)}%` : " "
+                            color: Theme.primary
+                            font.pixelSize: Appearance.fontSizeSmall - 2
+                        }
+                    }
+                }
+            }
         }
     }
 
     Divider {
-        visible: Weather.available && root.columns.length > 0
+        visible: Weather.available && root.days.length > 0
     }
 
-    // --- the next few hours ---
+    // --- the week ---
 
-    RowLayout {
+    ColumnLayout {
         Layout.fillWidth: true
-        visible: Weather.available && root.columns.length > 0
-        spacing: 0
+        visible: Weather.available && root.days.length > 0
+        spacing: 2
 
         Repeater {
-            model: root.columns
+            model: root.days
 
-            // A plain Item, not a ColumnLayout: a layout nested straight into another
-            // layout sizes itself from its contents and ignores the width it was given,
-            // which packed all five hours into the left third of the row
-            Item {
-                id: column
+            RowLayout {
+                id: day
 
                 required property var modelData
+                readonly property real low: modelData.low ?? modelData.high ?? 0
+                readonly property real high: modelData.high ?? modelData.low ?? 0
 
                 Layout.fillWidth: true
-                implicitHeight: stack.implicitHeight
+                implicitHeight: 28
+                spacing: Appearance.spacingLarge
 
-                ColumnLayout {
-                    id: stack
+                StyledText {
+                    Layout.preferredWidth: 56
+                    text: root.dayLabel(day.modelData.date)
+                    font.weight: Font.DemiBold
+                }
 
-                    anchors.left: parent.left
-                    anchors.right: parent.right
-                    spacing: 3
+                Icon {
+                    Layout.preferredWidth: 22
+                    text: Icons.weather(day.modelData.condition)
+                    size: 17
+                    color: Theme.surfaceVariantText
+                }
 
-                    StyledText {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: root.hourLabel(column.modelData.time)
-                        color: Theme.surfaceVariantText
-                        font.pixelSize: Appearance.fontSizeSmall - 1
+                StyledText {
+                    Layout.preferredWidth: 150
+                    text: day.modelData.short ?? ""
+                    elide: Text.ElideRight
+                    color: Theme.surfaceVariantText
+                    font.pixelSize: Appearance.fontSizeSmall
+                }
+
+                StyledText {
+                    Layout.preferredWidth: 36
+                    horizontalAlignment: Text.AlignRight
+                    text: day.modelData.precipitation >= 20 ? `${Math.round(day.modelData.precipitation)}%` : ""
+                    color: Theme.primary
+                    font.pixelSize: Appearance.fontSizeSmall
+                }
+
+                StyledText {
+                    Layout.preferredWidth: 36
+                    horizontalAlignment: Text.AlignRight
+                    text: root.degrees(day.modelData.low)
+                    color: Theme.textDim
+                }
+
+                // The week's range as the track, this day's low-to-high as the fill
+                Item {
+                    Layout.fillWidth: true
+                    implicitHeight: 6
+
+                    readonly property real span: Math.max(1, root.weekMax - root.weekMin)
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: height / 2
+                        color: Qt.alpha(Theme.surfaceText, 0.1)
                     }
 
-                    Icon {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: Icons.weather(column.modelData.condition)
-                        size: 18
-                        color: Theme.surfaceVariantText
+                    Rectangle {
+                        x: parent.width * (day.low - root.weekMin) / parent.span
+                        width: Math.max(height, parent.width * (day.high - day.low) / parent.span)
+                        height: parent.height
+                        radius: height / 2
+                        color: Theme.primary
                     }
+                }
 
-                    StyledText {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: `${Math.round(Settings.temperature(column.modelData.temperature))}°`
-                        font.pixelSize: Appearance.fontSizeSmall
-                        font.weight: Font.DemiBold
-                    }
+                StyledText {
+                    Layout.preferredWidth: 36
+                    text: root.degrees(day.modelData.high)
+                    font.weight: Font.DemiBold
                 }
             }
         }
@@ -196,7 +310,7 @@ ColumnLayout {
         }
     }
 
-    // When it was taken, so a stale card can be told from a fresh one
+    // When it was taken, so a stale page can be told from a fresh one. Click to refetch
     StyledText {
         Layout.fillWidth: true
         visible: Weather.available

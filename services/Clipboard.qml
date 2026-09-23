@@ -89,7 +89,8 @@ Singleton {
                 dataImages[match[1]] = true;
                 next.push({
                     id: match[1],
-                    preview: `Image address (${dataImage[1]})`
+                    preview: `Image address (${dataImage[1]})`,
+                    isImage: true
                 });
                 continue;
             }
@@ -100,7 +101,9 @@ Singleton {
                 continue;
             next.push({
                 id: match[1],
-                preview: rawPreview
+                preview: rawPreview,
+                // cliphist's own line for images: "[[ binary data 1.2 MiB png 1920x1080 ]]"
+                isImage: /^\[\[ binary data .* (png|jpe?g|gif|webp|bmp|tiff?|svg|avif) /i.test(rawPreview)
             });
         }
         dataImageById = dataImages;

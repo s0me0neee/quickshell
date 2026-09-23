@@ -76,12 +76,32 @@ fn run() -> Result<Value, Box<dyn std::error::Error>> {
         .or_else(|| hours.first())
         .ok_or("forecast was empty")?;
 
+    // Optional: a failed daily fetch costs the hub its week, not the bar its reading
+    let daily = daily_url(&point)
+        .and_then(|url| {
+            Ok(client
+                .get(&url)
+                .send()?
+                .error_for_status()?
+                .json::<Value>()?)
+        })
+        .map(|forecast| {
+            days(
+                forecast["properties"]["periods"]
+                    .as_array()
+                    .map(Vec::as_slice)
+                    .unwrap_or_default(),
+            )
+        })
+        .unwrap_or_default();
+
     Ok(json!({
         "ok": true,
         "city": city,
         "updated": Local::now().to_rfc3339(),
         "now": current,
         "hourly": hours.iter().take(HOURS).collect::<Vec<_>>(),
+        "daily": daily,
     }))
 }
 
@@ -97,7 +117,9 @@ fn user_agent() -> String {
 /// public IP looks like from outside.
 fn locate(client: &reqwest::blocking::Client) -> Result<Place, Box<dyn std::error::Error>> {
     if let Ok(raw) = std::env::var(LATLON_VAR) {
-        let (lat, lon) = raw.split_once(',').ok_or("QS_WEATHER_LATLON wants lat,lon")?;
+        let (lat, lon) = raw
+            .split_once(',')
+            .ok_or("QS_WEATHER_LATLON wants lat,lon")?;
         return Ok(Place {
             city: String::new(),
             latitude: lat.trim().parse()?,
@@ -154,6 +176,43 @@ fn forecast_url(point: &Value) -> Result<String, Box<dyn std::error::Error>> {
         .as_str()
         .map(String::from)
         .ok_or_else(|| "NOAA gave no hourly forecast for this point".into())
+}
+
+fn daily_url(point: &Value) -> Result<String, Box<dyn std::error::Error>> {
+    point["properties"]["forecast"]
+        .as_str()
+        .map(String::from)
+        .ok_or_else(|| "NOAA gave no daily forecast for this point".into())
+}
+
+/// NOAA's daily forecast alternates day and night periods. One entry per date: the
+/// high from the day half, the low from the night half. The first date can be
+/// night-only ("Tonight"), so its high is null.
+fn days(periods: &[Value]) -> Vec<Value> {
+    let mut out: Vec<Value> = Vec::new();
+    for period in periods {
+        let Some(date) = period["startTime"].as_str().and_then(|t| t.get(..10)) else {
+            continue;
+        };
+        if out.last().is_none_or(|d| d["date"] != date) {
+            out.push(json!({ "date": date, "high": null, "low": null }));
+        }
+        let entry = out.last_mut().expect("just pushed");
+        let temperature = period["temperature"].as_f64();
+        let day = period["isDaytime"].as_bool().unwrap_or(true);
+        entry[if day { "high" } else { "low" }] = json!(temperature);
+        // The day half describes the date better; night only fills in a night-only date
+        if day || entry.get("condition").is_none() {
+            entry["condition"] = json!(condition(period["icon"].as_str().unwrap_or_default()));
+            entry["short"] = json!(period["shortForecast"].as_str().unwrap_or_default());
+            entry["precipitation"] = json!(
+                period["probabilityOfPrecipitation"]["value"]
+                    .as_f64()
+                    .unwrap_or(0.0)
+            );
+        }
+    }
+    out
 }
 
 /// NOAA's `relativeLocation`: the city it files the point under, e.g.
@@ -247,6 +306,46 @@ mod tests {
         assert_eq!(noaa_name(&no_state), "Somewhere");
 
         assert_eq!(noaa_name(&json!({})), "");
+    }
+
+    #[test]
+    fn folds_day_and_night_into_dates() {
+        let period = |start: &str, day: bool, t: f64, icon: &str| {
+            json!({
+                "startTime": start, "isDaytime": day, "temperature": t,
+                "icon": icon, "shortForecast": "x",
+                "probabilityOfPrecipitation": { "value": null }
+            })
+        };
+        let periods = [
+            period(
+                "2026-09-21T18:00:00-04:00",
+                false,
+                60.0,
+                "https://a/icons/land/night/few?size=small",
+            ),
+            period(
+                "2026-09-22T06:00:00-04:00",
+                true,
+                75.0,
+                "https://a/icons/land/day/rain?size=small",
+            ),
+            period(
+                "2026-09-22T18:00:00-04:00",
+                false,
+                58.0,
+                "https://a/icons/land/night/skc?size=small",
+            ),
+        ];
+        let out = days(&periods);
+        assert_eq!(out.len(), 2);
+        assert_eq!(out[0]["high"], Value::Null);
+        assert_eq!(out[0]["low"], 60.0);
+        assert_eq!(out[0]["condition"], "night/few");
+        assert_eq!(out[1]["high"], 75.0);
+        assert_eq!(out[1]["low"], 58.0);
+        assert_eq!(out[1]["condition"], "day/rain");
+        assert_eq!(out[1]["precipitation"], 0.0);
     }
 
     #[test]
