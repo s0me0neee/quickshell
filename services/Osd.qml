@@ -3,6 +3,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import qs.common
+import qs.services
 
 // What the island shows instead of the track for a moment after the volume or
 // brightness changes.
@@ -13,9 +14,33 @@ import qs.common
 Singleton {
     id: root
 
-    // "", "volume", "mic" or "brightness". The island maps it to a glyph and a value.
+    // "", "volume", "mic" or "brightness".
     property string kind: ""
     readonly property bool active: kind !== ""
+
+    // What the current kind reads, as data. Two surfaces draw this now — the island and
+    // the fullscreen overlay — so it lives here rather than in either of them.
+    //
+    // The *eased* version of `value` belongs to each surface, not here: easing is
+    // motion, and a service that imported qs.components to get `Anim` would have a
+    // singleton depending on the UI layer.
+    readonly property bool muted: (kind === "volume" && Audio.muted) || (kind === "mic" && Audio.micMuted)
+
+    readonly property real value: {
+        if (kind === "mic")
+            return Audio.micMuted ? 0 : Audio.micVolume;
+        if (kind === "brightness")
+            return Brightness.brightness;
+        return Audio.muted ? 0 : Audio.volume;
+    }
+
+    readonly property string icon: {
+        if (kind === "mic")
+            return Audio.micMuted ? Icons.micMuted : Icons.mic;
+        if (kind === "brightness")
+            return Icons.pick(Icons.brightness, Brightness.brightness);
+        return Audio.muted ? Icons.volumeMuted : Icons.pick(Icons.volume, Audio.volume);
+    }
 
     // Every binding below evaluates once as the services fill in, and Pipewire takes a
     // moment to hand over a default sink. Without this the shell would greet you with
@@ -31,6 +56,31 @@ Singleton {
             return;
         kind = what;
         hide.restart();
+    }
+
+    // A fullscreen window covers the bar, so the island's morph can't be seen. The OSD
+    // then gets its own surface on the overlay layer instead — see modules/osd/.
+    readonly property bool overlay: active && Notifs.fullscreen
+
+    // Held a little past `overlay` so the surface can finish sliding out before
+    // shell.qml drops it. Counted here rather than off the window's own progress: an
+    // active that depends on the item it creates never settles.
+    property bool overlayLive: false
+
+    onOverlayChanged: {
+        if (overlay) {
+            overlayLinger.stop();
+            overlayLive = true;
+        } else {
+            overlayLinger.restart();
+        }
+    }
+
+    Timer {
+        id: overlayLinger
+
+        interval: Appearance.animNormal + 150
+        onTriggered: root.overlayLive = false
     }
 
     Timer {

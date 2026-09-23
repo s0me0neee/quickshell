@@ -6,9 +6,9 @@ import qs.services
 import qs.modules.dashboard
 
 // Center island, after Clavis's Keystone: a rolling clock that grows sideways to
-// carry the current track, and expands into the full media card on hover. Each
-// digit is a 0-9 strip that springs to its place. Click the clock for the date and
-// right-click it for the calendar; click the track to play/pause, scroll to change song.
+// carry the current track. Each digit is a 0-9 strip that springs to its place.
+// Hover anywhere on it for the media card, right-click anywhere for the hub. Click the
+// clock for the date; click the track to play/pause, scroll it to change song.
 Rectangle {
     id: root
 
@@ -18,8 +18,22 @@ Rectangle {
 
     // The card follows the pointer across both the island and the card itself, so
     // crossing the gap between them doesn't close it
-    readonly property bool pointerOnTrack: mediaMouse.containsMouse || card.hovered
-    onPointerOnTrackChanged: pointerOnTrack ? expand.restart() : collapse.restart()
+    readonly property bool pointerOnIsland: islandHover.hovered || card.hovered
+    onPointerOnIslandChanged: pointerOnIsland ? expand.restart() : collapse.restart()
+
+    // A handler rather than a MouseArea: it watches the whole pill without taking any
+    // click away from the clock or the track
+    HoverHandler {
+        id: islandHover
+    }
+
+    // Declared before the content, so the clock and track keep their own clicks and only
+    // the right button falls through to here, wherever on the pill it lands
+    MouseArea {
+        anchors.fill: parent
+        acceptedButtons: Qt.RightButton
+        onClicked: hub.toggle()
+    }
 
     // Reveal amounts, 0..1. Widths are derived from these, so the pill's own width
     // is never a second animation chasing the first one.
@@ -30,21 +44,21 @@ Rectangle {
     // the other instead of bulging while two animations cross.
     property real osdProgress: Osd.active ? 1 : 0
 
-    readonly property bool osdMuted: (Osd.kind === "volume" && Audio.muted) || (Osd.kind === "mic" && Audio.micMuted)
-    readonly property real osdValue: {
-        if (Osd.kind === "mic")
-            return Audio.micMuted ? 0 : Audio.micVolume;
-        if (Osd.kind === "brightness")
-            return Brightness.brightness;
-        return Audio.muted ? 0 : Audio.volume;
+    readonly property bool osdMuted: Osd.muted
+    readonly property real osdValue: Osd.value
+    // The reading the bar and the percentage actually draw. `osdValue` jumps in 2%
+    // steps as the key repeats; this eases between them, so holding a key reads as a
+    // sweep rather than a stack of jerks. A Behavior never runs on a binding's first
+    // evaluation, so the OSD's opening frame is still the true value.
+    property real osdLevel: osdValue
+
+    Behavior on osdLevel {
+        Anim {
+            duration: Appearance.animFast
+        }
     }
-    readonly property string osdIcon: {
-        if (Osd.kind === "mic")
-            return Audio.micMuted ? Icons.micMuted : Icons.mic;
-        if (Osd.kind === "brightness")
-            return Icons.pick(Icons.brightness, Brightness.brightness);
-        return Audio.muted ? Icons.volumeMuted : Icons.pick(Icons.volume, Audio.volume);
-    }
+
+    readonly property string osdIcon: Osd.icon
 
     readonly property int padding: 14
     readonly property int gap: 12
@@ -125,10 +139,36 @@ Rectangle {
                 spacing: Appearance.spacingSmall + 4
 
                 Icon {
+                    id: osdGlyph
+
                     anchors.verticalCenter: parent.verticalCenter
                     text: root.osdIcon
                     size: 18
                     color: root.osdMuted ? Theme.critical : Theme.primary
+
+                    // The glyph changes under a live OSD when you go from volume to
+                    // brightness, or cross a mute. A one-shot pop marks the swap; a
+                    // cross-fade would need a second Icon for the two frames it shows.
+                    onTextChanged: pop.restart()
+
+                    SequentialAnimation {
+                        id: pop
+
+                        Anim {
+                            target: osdGlyph
+                            property: "scale"
+                            to: 0.72
+                            duration: Appearance.animFast / 2
+                        }
+
+                        Anim {
+                            target: osdGlyph
+                            property: "scale"
+                            to: 1
+                            duration: Appearance.animFast
+                            easing.bezierCurve: Appearance.curveExpressive
+                        }
+                    }
                 }
 
                 WavyProgress {
@@ -138,7 +178,7 @@ Rectangle {
                     // read as sound rather than as a level
                     wavy: false
                     lineWidth: 5
-                    value: root.osdValue
+                    value: root.osdLevel
                     color: root.osdMuted ? Theme.critical : Theme.primary
                 }
 
@@ -151,7 +191,7 @@ Rectangle {
                     // 10 and 100
                     width: percentMetrics.width
                     horizontalAlignment: Text.AlignRight
-                    text: `${Math.round(root.osdValue * 100)}%`
+                    text: `${Math.round(root.osdLevel * 100)}%`
                     color: root.osdMuted ? Theme.critical : Theme.surfaceText
                     font.pixelSize: Appearance.fontSize
 
@@ -395,13 +435,7 @@ Rectangle {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                acceptedButtons: Qt.LeftButton | Qt.RightButton
-                onClicked: mouse => {
-                    if (mouse.button === Qt.RightButton)
-                        calendar.toggle();
-                    else
-                        root.showDate = !root.showDate;
-                }
+                onClicked: root.showDate = !root.showDate
             }
         }
     }
@@ -409,13 +443,14 @@ Rectangle {
     Tooltip {
         target: clockRow
         text: Qt.formatDate(clock.date, "dddd, MMMM d, yyyy")
-        show: clockMouse.containsMouse && !root.showDate && !calendar.open
+        show: clockMouse.containsMouse && !root.showDate && !hub.open
     }
 
     Dashboard {
-        id: calendar
+        id: hub
 
-        target: clockBox
+        // Under the whole island rather than the digits: the hub is far wider than either
+        target: root
         bar: root.bar
         today: clock.date
     }
@@ -445,15 +480,31 @@ Rectangle {
         id: expand
 
         interval: 320
-        onTriggered: card.open = root.pointerOnTrack && Media.hasMedia
+        onTriggered: card.open = root.pointerOnIsland && Media.hasMedia && !hub.open
     }
 
     Timer {
         id: collapse
 
         interval: 220
-        onTriggered: if (!root.pointerOnTrack)
+        onTriggered: if (!root.pointerOnIsland)
             card.open = false
+    }
+
+    // The hub stays while the pointer is on it or on the island it came from, and folds
+    // away once it has left both. The delay covers the gap between the two
+    readonly property bool pointerOnHub: islandHover.hovered || hub.hovered
+    onPointerOnHubChanged: {
+        if (!pointerOnHub && hub.open)
+            hubLeave.restart();
+    }
+
+    Timer {
+        id: hubLeave
+
+        interval: 220
+        onTriggered: if (!root.pointerOnHub)
+            hub.open = false
     }
 
     Connections {
