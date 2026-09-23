@@ -29,11 +29,41 @@ Pill {
     readonly property int dotSize: 15
     readonly property int slot: 29
 
+    // The dot the pointer is on, and the list it is showing. One shared tooltip for the
+    // whole row: moving between dots re-anchors it and swaps the text, so the hover
+    // delay is paid once rather than per dot.
+    property Item hoveredDot: null
+    property string hoverText: ""
+
+    // Built in the hover handler, never as a binding. A binding here would make every
+    // dot re-evaluate whenever any window's title changed anywhere.
+    function describe(ws: HyprlandWorkspace, id: int): string {
+        const tops = ws?.toplevels.values ?? [];
+        if (tops.length === 0)
+            return `Workspace ${id} · empty`;
+
+        const shown = tops.slice(0, 8).map(t => {
+            const title = t.title || t.lastIpcObject?.class || "Untitled";
+            return title.length > 44 ? `${title.slice(0, 43)}…` : title;
+        });
+        if (tops.length > shown.length)
+            shown.push(`+${tops.length - shown.length} more`);
+
+        return [`Workspace ${id} · ${tops.length} window${tops.length === 1 ? "" : "s"}`, ...shown].join("\n");
+    }
+
     padding: 13
     spacing: 0
     implicitWidth: count * slot + padding * 2
     onScrolled: delta => Hyprland.dispatch(`workspace ${delta > 0 ? "e-1" : "e+1"}`)
     onActiveIndexChanged: track.runAnim()
+
+    Tooltip {
+        target: root.hoveredDot ?? root
+        text: root.hoverText
+        align: Text.AlignLeft
+        show: root.hoveredDot !== null && root.hoverText !== ""
+    }
 
     Item {
         id: track
@@ -43,6 +73,11 @@ Pill {
         property real end: root.slot
 
         readonly property int lead: Appearance.animSlow
+        // Which dots the capsule swallows whole, as two integers: the dots then only
+        // re-evaluate when the range moves, not on every frame of the slide
+        readonly property real inset: (root.slot - root.dotSize) / 2
+        readonly property int coveredFrom: Math.ceil((start - inset) / root.slot)
+        readonly property int coveredTo: Math.floor((end - root.slot + inset) / root.slot)
         readonly property int trail: Appearance.animSlow * 1.5
 
         function runAnim(): void {
@@ -100,7 +135,7 @@ Pill {
                 // once the capsule has swallowed it whole. Until then the capsule clips
                 // it, which is what makes the dot look absorbed on arrival instead of
                 // blinking out before the capsule gets there.
-                readonly property bool covered: root.activeIndex >= 0 && track.start <= x + (root.slot - root.dotSize) / 2 && track.end >= x + (root.slot + root.dotSize) / 2
+                readonly property bool covered: root.activeIndex >= 0 && index >= track.coveredFrom && index <= track.coveredTo
 
                 x: index * root.slot
                 width: root.slot
@@ -108,6 +143,14 @@ Pill {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: Hyprland.dispatch(`workspace ${wsId}`)
+                onContainsMouseChanged: {
+                    if (containsMouse) {
+                        root.hoverText = root.describe(ws, wsId);
+                        root.hoveredDot = dot;
+                    } else if (root.hoveredDot === dot) {
+                        root.hoveredDot = null;
+                    }
+                }
 
                 Rectangle {
                     anchors.centerIn: parent

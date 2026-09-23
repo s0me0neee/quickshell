@@ -9,6 +9,8 @@ PopupWindow {
     required property Item target
     property string text
     property bool show: false
+    // A list reads better ranged left; a single label still centres
+    property int align: Text.AlignHCenter
 
     property bool shown: false
     property real progress: shown ? 1 : 0
@@ -60,7 +62,7 @@ PopupWindow {
 
             anchors.centerIn: parent
             text: root.text
-            horizontalAlignment: Text.AlignHCenter
+            horizontalAlignment: root.align
             font.pixelSize: Appearance.fontSizeSmall
         }
     }
