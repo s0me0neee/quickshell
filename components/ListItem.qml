@@ -24,12 +24,19 @@ MouseArea {
     Rectangle {
         anchors.fill: parent
         radius: Appearance.radiusItem
-        color: root.highlighted ? Qt.alpha(Theme.primary, root.containsMouse ? 0.22 : 0.14) : root.containsMouse ? Qt.alpha(Theme.surfaceText, 0.08) : "transparent"
+        color: root.highlighted ? Qt.alpha(Theme.primary, 0.14) : "transparent"
 
         Behavior on color {
             CAnim {
                 duration: Appearance.animFast
             }
+        }
+
+        StateLayer {
+            radius: parent.radius
+            tone: root.highlighted ? Theme.primary : Theme.surfaceText
+            hovered: root.containsMouse
+            pressed: root.pressed
         }
     }
 

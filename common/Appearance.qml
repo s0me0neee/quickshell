@@ -42,6 +42,14 @@ Singleton {
     readonly property int themeIconSize: 22
     readonly property int themeIconSizeSmall: 16
 
+    // State layer opacities, one scale for every interactive surface (see
+    // components/StateLayer.qml). Material's values; `active` is ours, for a toggle
+    // that is currently on.
+    readonly property real stateHover: 0.08
+    readonly property real stateFocus: 0.1
+    readonly property real statePress: 0.12
+    readonly property real stateActive: 0.18
+
     // Motion
     readonly property int animFast: 150
     readonly property int animNormal: 300

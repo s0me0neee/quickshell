@@ -45,18 +45,12 @@ MouseArea {
             }
         }
 
-        // Hover / active state layer
-        Rectangle {
-            anchors.fill: parent
+        StateLayer {
             radius: parent.radius
-            color: root.iconColor
-            opacity: root.active ? 0.18 : root.containsMouse ? 0.1 : 0
-
-            Behavior on opacity {
-                Anim {
-                    duration: Appearance.animFast
-                }
-            }
+            tone: root.iconColor
+            hovered: root.containsMouse
+            pressed: root.pressed
+            active: root.active
         }
 
         Icon {

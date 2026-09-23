@@ -18,7 +18,7 @@ MouseArea {
     Rectangle {
         anchors.fill: parent
         radius: height / 2
-        color: root.filled ? Qt.lighter(root.tone, root.containsMouse ? 1.1 : 1) : Qt.alpha(root.tone, root.containsMouse ? 0.24 : 0.14)
+        color: root.filled ? root.tone : Qt.alpha(root.tone, 0.14)
         scale: root.pressed ? 0.95 : 1
 
         Behavior on color {
@@ -31,6 +31,13 @@ MouseArea {
             Anim {
                 duration: Appearance.animFast
             }
+        }
+
+        StateLayer {
+            radius: parent.radius
+            tone: root.filled ? Theme.primaryText : root.tone
+            hovered: root.containsMouse
+            pressed: root.pressed
         }
     }
 
