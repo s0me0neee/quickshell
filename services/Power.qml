@@ -2,7 +2,9 @@ pragma Singleton
 
 import QtQuick
 import Quickshell
+import Quickshell.Services.Notifications
 import Quickshell.Services.UPower
+import qs.services
 
 Singleton {
     id: root
@@ -55,5 +57,46 @@ Singleton {
         const h = Math.floor(seconds / 3600);
         const m = Math.floor(seconds % 3600 / 60);
         return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    }
+
+    // Warn levels, as whole percent
+    readonly property int lowLevel: 20
+    readonly property int criticalLevel: 10
+
+    // One flag per threshold, so a reading that jitters across the line doesn't warn
+    // twice. Both re-arm when the charger goes back in — that is the only reset.
+    property bool warnedLow: false
+    property bool warnedCritical: false
+
+    // Event-driven off UPower: no timer, nothing polling. Runs on every reported
+    // change, which is also what catches the charger being pulled while already low.
+    onPercentageChanged: checkCharge()
+    onDischargingChanged: checkCharge()
+    onChargingChanged: checkCharge()
+
+    function checkCharge(): void {
+        if (!hasBattery)
+            return;
+
+        if (charging || !discharging) {
+            warnedLow = false;
+            warnedCritical = false;
+            return;
+        }
+
+        const pct = Math.round(percentage * 100);
+
+        if (pct <= criticalLevel) {
+            if (warnedCritical)
+                return;
+            warnedCritical = true;
+            // Passing the low mark too, so unplugging at 8% doesn't stack both warnings
+            warnedLow = true;
+            // Persists (timeout 0): this one should still be on screen when you look up
+            Notifs.notify("Battery critically low", timeLeft > 0 ? `${pct}% — about ${formatTime(timeLeft)} left. Plug in now.` : `${pct}% left. Plug in now.`, NotificationUrgency.Critical, "battery-caution-symbolic", 0);
+        } else if (pct <= lowLevel && !warnedLow) {
+            warnedLow = true;
+            Notifs.notify("Battery low", timeLeft > 0 ? `${pct}% — about ${formatTime(timeLeft)} left.` : `${pct}% left.`, NotificationUrgency.Normal, "battery-low-symbolic", -1);
+        }
     }
 }

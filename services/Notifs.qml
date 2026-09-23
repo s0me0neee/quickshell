@@ -50,6 +50,16 @@ Singleton {
     // They still land in the list, so nothing is lost.
     readonly property bool fullscreen: Hyprland.focusedMonitor?.activeWorkspace?.toplevels.values.some(t => t.lastIpcObject.fullscreen > 1) ?? false
 
+    // Quickshell only refreshes lastIpcObject at startup and on config reload
+    Connections {
+        target: Hyprland
+
+        function onRawEvent(event: HyprlandEvent): void {
+            if (event.name === "fullscreen")
+                Hyprland.refreshToplevels();
+        }
+    }
+
     Timer {
         id: popupLinger
 
@@ -69,6 +79,28 @@ Singleton {
 
     function toggleDnd(): void {
         props.dnd = !props.dnd;
+    }
+
+    // A notification from the shell itself. The shell owns the server, so this goes
+    // straight into the list — no D-Bus round trip and no notify-send to depend on.
+    // `expireTimeout` follows freedesktop: -1 for the urgency default, 0 to persist.
+    //
+    // Critical entries pop even over a fullscreen window: the only shell-generated ones
+    // are things you need to see now, and a warning held back until you alt-tab is no
+    // warning at all.
+    function notify(summary: string, body: string, urgency: int, icon: string, expireTimeout: real): NotifEntry {
+        const critical = urgency === NotificationUrgency.Critical;
+        const entry = entryComponent.createObject(root, {
+            summary,
+            body,
+            appName: "System",
+            appIcon: icon ?? "",
+            urgency: urgency ?? NotificationUrgency.Normal,
+            expireTimeout: expireTimeout ?? -1,
+            popup: critical || root.shouldPopUp()
+        });
+        root.list = [entry, ...root.list];
+        return entry;
     }
 
     // Remove one entry from the list. Called by the entry as it closes itself.
