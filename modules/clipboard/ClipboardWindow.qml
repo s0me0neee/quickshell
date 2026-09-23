@@ -28,17 +28,14 @@ PanelWindow {
 
     function inspectSelected(): void {
         const entry = Clipboard.filteredEntries[selected];
-        if (entry)
+        // Only images have a pane to fill; decoding text rows would be wasted processes
+        if (entry?.isImage)
             Clipboard.inspect(entry);
         else
             Clipboard.clearInspection();
     }
 
-    onSelectedChanged: {
-        inspectSelected();
-        // Keyboard navigation has to be able to walk past the visible rows
-        history.positionViewAtIndex(selected, ListView.Contain);
-    }
+    onSelectedChanged: inspectSelected()
 
     Connections {
         target: Clipboard
@@ -58,6 +55,9 @@ PanelWindow {
             return;
         }
         selected = (selected + delta + count) % count;
+        // Only the keyboard scrolls the list to the selection. Hover selects too, and
+        // doing it there dragged the view back under every row a touchpad scroll crossed
+        history.positionViewAtIndex(selected, ListView.Contain);
     }
 
     Behavior on progress {
@@ -67,15 +67,11 @@ PanelWindow {
         }
     }
 
-    Rectangle {
+    // No scrim: the desktop stays as it is behind the panel. This is only here to catch
+    // a click outside, so it draws nothing.
+    MouseArea {
         anchors.fill: parent
-        color: Qt.alpha(Theme.surface, 0.52)
-        opacity: root.progress
-
-        MouseArea {
-            anchors.fill: parent
-            onClicked: Clipboard.closeHistory()
-        }
+        onClicked: Clipboard.closeHistory()
     }
 
     Shortcut {
@@ -185,6 +181,14 @@ PanelWindow {
                             focus: true
                             text: Clipboard.query
                             Component.onCompleted: forceActiveFocus()
+                            // Caught before TextInput sees it: Ctrl+K is its "delete to end of
+                            // line", so it never bubbled up to the navigation on the scope
+                            Keys.onPressed: event => {
+                                if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_K) {
+                                    root.move(-1);
+                                    event.accepted = true;
+                                }
+                            }
                             onTextChanged: {
                                 Clipboard.query = text;
                                 root.selected = 0;
@@ -208,6 +212,10 @@ PanelWindow {
                         clip: true
                         spacing: Appearance.spacingSmall
                         model: Clipboard.filteredEntries
+
+                        WheelScroll {
+                            view: history
+                        }
 
                         delegate: ListItem {
                             required property var modelData
@@ -236,6 +244,8 @@ PanelWindow {
                 }
 
                 Rectangle {
+                    // Text rows already show their text in the list; only images earn a pane
+                    visible: Clipboard.filteredEntries[root.selected]?.isImage ?? false
                     Layout.fillHeight: true
                     Layout.preferredWidth: 330
                     radius: Appearance.radiusItem
