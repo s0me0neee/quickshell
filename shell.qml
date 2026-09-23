@@ -6,7 +6,10 @@ import QtQuick
 import Quickshell
 import qs.modules.bar
 import qs.modules.clipboard
+import qs.modules.launcher
 import qs.modules.notifications
+import qs.modules.osd
+import qs.modules.polkit
 import qs.modules.session
 import qs.modules.settings
 import qs.services
@@ -28,11 +31,33 @@ ShellRoot {
         ClipboardWindow {}
     }
 
+    // Built when you open it, dropped once it has faded out
+    LazyLoader {
+        active: Launcher.live
+
+        LauncherWindow {}
+    }
+
+    // Only while a fullscreen window is hiding the bar — the island shows the OSD the
+    // rest of the time, so this surface doesn't exist on an ordinary volume change.
+    LazyLoader {
+        active: Osd.overlayLive
+
+        OsdWindow {}
+    }
+
     // Built on first use, and kept only until it has faded back out
     LazyLoader {
         active: Session.menuLive
 
         SessionMenu {}
+    }
+
+    // The agent itself lives in the Polkit singleton; only the prompt waits for a request
+    LazyLoader {
+        active: Polkit.live
+
+        PolkitDialog {}
     }
 
     LazyLoader {

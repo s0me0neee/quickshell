@@ -1,0 +1,17 @@
+[package]
+name = "qs-search"
+version = "0.1.0"
+edition = "2024"
+description = "Ranks the launcher's candidates. Corpus and queries in on stdin, ranked ids out on stdout."
+
+[dependencies]
+# The matcher helix uses. `nucleo-matcher` is the scoring half on its own; the full
+# `nucleo` crate adds a threaded picker engine this has no use for.
+nucleo-matcher = "0.3"
+serde_json = "1"
+
+[profile.release]
+strip = true
+# Not opt-level = "s" like the other helpers: ranking every candidate on every
+# keystroke is this program's whole job, so it is the one place speed beats size.
+opt-level = 3

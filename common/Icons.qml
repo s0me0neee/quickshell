@@ -37,6 +37,9 @@ Singleton {
     readonly property string mic: "\u{F036C}"
     readonly property string micMuted: "\u{F036D}"
     readonly property string apps: "\u{F0570}"
+    readonly property string search: "\u{F0349}"
+    readonly property string calc: "\u{F00EC}"
+    readonly property string enterKey: "\u{F0311}"
 
     readonly property string checkOn: "\u{F0132}"
     readonly property string checkOff: "\u{F0131}"

@@ -8,3 +8,6 @@ dev/.build/
 
 # Built by weather/: the binary the shell runs, not the source
 weather/target/
+
+# Same for the helper binaries under tools/
+tools/*/target/
